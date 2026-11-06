@@ -67,7 +67,68 @@
       s25.siege.push({ nr: i + 1, person_id: pid, preis_id: pr, sonderrunde: false, importiert: false, zeit: "2025-11-06T19:" + String(10 + i).padStart(2, "0") + ":00" });
     });
   }
+  // Worst-Case-Daten zum Ausprobieren der Oberflaeche (alles ERFUNDEN):
+  //   ?demo&extrem        70 Anwesende, sehr lange Namen/Teams, Ein-Buchstaben-Namen, dreistellige Mengen,
+  //                       140+ Runden, 12 Vorjahre, Preisname mit 30+ Zeichen, Phase ohne Preise, zwei Spezialpreise
+  //   ?demo&extrem=leer   alles leer: keine Personen, Siege, Vorjahre, Preise
+  function aufbauenExtrem(leer) {
+    D.personen = []; D.spiele = [];
+    if (leer) {
+      D.spiele.push({ jahr: 2025, datum: null, phasen: [], preise: [], anwesende_ids: [], siege: [] });
+      return;
+    }
+    const LANG_V = "Maximiliane-Theodora-Annabelle-Friederike-Gundelinde";
+    const LANG_N = "Musterfrau-Beispielhausen-Platzhalter-Vorlagenstein";
+    for (let i = 0; i < 70; i++) {
+      let vor = VOR[i % VOR.length], nach = NACH[(i * 7 + 3 + Math.floor(i / VOR.length)) % NACH.length], team = false;
+      if (i < 4) { vor = LANG_V.slice(0, 20 + i * 10); nach = LANG_N; }              // sehr lange Namen
+      else if (i < 8) { vor = "XQZW"[i - 4]; nach = "YKJV"[i - 4]; }                  // Ein-Buchstaben-Namen
+      else if (i < 14) {                                                              // lange Teams
+        team = true;
+        vor = VOR[i] + "-" + VOR[i + 1] + " / " + VOR[i + 2] + "-" + VOR[i + 3];
+        nach = "Gemeinsam-" + NACH[i] + "-Gruppe";
+      }
+      D.personen.push({ id: "p" + i, vorname: vor, nachname: nach, ist_team: team });
+    }
+    const r = rng(7);
+    // 12 Vorjahre
+    for (let jahr = 2013; jahr <= 2024; jahr++) {
+      const n = 25 + Math.floor(r() * 40);
+      const ids = D.personen.map((p) => p.id).sort(() => r() - 0.5).slice(0, n);
+      const menge = 90 + Math.floor(r() * 80);
+      const siege = [];
+      for (let i = 0; i < menge; i++) siege.push({ nr: i + 1, person_id: ids[Math.floor(Math.pow(r(), 1.6) * ids.length)], preis_id: "alt" + jahr, sonderrunde: false, importiert: true });
+      D.spiele.push({ jahr, datum: null, phasen: [], preise: [{ id: "alt" + jahr, name: "Preise", icon: "geschenk", menge, phase_id: null, spezial: false }], anwesende_ids: ids, siege });
+    }
+    const p1 = { id: "ph1", name: "Phase 1 – Wurst, Teigwaren und andere Dauerwaren aus dem Vereinsvorrat", reihenfolge: 1 };
+    const p2 = { id: "ph2", name: "Phase 2 – Werbegeschenke", reihenfolge: 2 };
+    const p3 = { id: "ph3", name: "Phase 3 – noch ohne Preise", reihenfolge: 3 };
+    const p4 = { id: "ph4", name: "Phase 4 – Restposten", reihenfolge: 4 };
+    const N1 = ["Dose Bierschinken", "Ringwurst", "Geräucherte Wurst", "Teigwaren", "Honig", "Handgefertigter Vereinspokal mit Gravur und Schleife", "Salamistange",
+      "Dose Leberwurst", "Flasche Apfelsaft", "Packung Kaffee", "Kasseler Kotelett", "Senf im Glas", "Schinkenspeck", "Dosenbrot"];
+    const IC = ["dose", "ring", "wurst", "teig", "glas", "pokal", "wurst", "dose", "flasche", "glas", "wurst", "glas", "wurst", "dose"];
+    const MENGE = [180, 240, 150, 320, 110, 2, 95, 120, 100, 410, 260, 130, 999, 105];
+    const preise = N1.map((n, i) => ({ id: "w" + i, name: n, icon: IC[i], menge: MENGE[i], phase_id: "ph1", spezial: false }));
+    ["Tasse", "Kugelschreiber-Set", "Z"].forEach((n, i) => preise.push({ id: "g" + i, name: n, icon: "geschenk", menge: [12, 10, 1][i], phase_id: "ph2", spezial: false }));
+    ["Gutschein", "Flaschenöffner", "Schlüsselband"].forEach((n, i) => preise.push({ id: "r" + i, name: n, icon: "geschenk", menge: [7, 6, 5][i], phase_id: "ph4", spezial: false }));
+    preise.push({ id: "sp1", name: "Flasche Premium-Gin aus der Vereinsbrennerei (limitierte Sonderfüllung)", icon: "flasche", menge: 1, phase_id: null, spezial: true });
+    preise.push({ id: "sp2", name: "Reisegutschein", icon: "geschenk", menge: 2, phase_id: null, spezial: true });
+    const anw = D.personen.map((p) => p.id);
+    const s25 = { jahr: 2025, datum: null, phasen: [p1, p2, p3, p4], preise, anwesende_ids: anw, siege: [] };
+    D.spiele.push(s25);
+    // 148 Runden vorspielen; der letzte Gewinner hat einen sehr langen Namen
+    for (let i = 0; i < 148; i++) {
+      const pid = i === 147 ? "p3" : anw[Math.floor(Math.pow(r(), 1.5) * anw.length)];
+      let k = i % 14;
+      if (k === 5 && s25.siege.filter((x) => x.preis_id === "w5").length >= 2) k = 3;
+      s25.siege.push({ nr: i + 1, person_id: pid, preis_id: "w" + k, sonderrunde: false, importiert: false, zeit: "2025-11-06T19:" + String(10 + (i % 50)).padStart(2, "0") + ":00" });
+    }
+  }
+  const EXTREM = /[?&]extrem(&|=|$)/.test(location.search);
+  const EXTREM_LEER = /[?&]extrem=leer(&|$)/.test(location.search);
+
   aufbauen();
+  if (EXTREM) aufbauenExtrem(EXTREM_LEER);
 
   // ---------------------------------------------------------------- Regeln (Spiegel von spiel.py)
   const spiel = (j) => D.spiele.find((s) => s.jahr === (j == null ? D.jahr : j));

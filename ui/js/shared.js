@@ -13,33 +13,53 @@
     return '<span class="icon" aria-hidden="true">' + svg + "</span>";
   };
 
+  // Einzahl/Mehrzahl nach deutscher Regel: plural(1, "Preis", "Preise") -> "Preis"
+  const PR = (function () { try { return new Intl.PluralRules("de"); } catch (e) { return null; } })();
+  window.plural = function (n, eins, mehr) {
+    return (PR ? PR.select(n) === "one" : n === 1) ? eins : mehr;
+  };
+  // "3 Preise", "1 Preis"
+  window.anzahl = function (n, eins, mehr) {
+    return zahl(n) + " " + plural(n, eins, mehr);
+  };
+  // Zahl mit deutschem Tausendertrennzeichen (ab 1000): 2345 -> "2.345"
+  window.zahl = function (n) {
+    return typeof n === "number" ? n.toLocaleString("de-DE") : String(n == null ? "" : n);
+  };
+  // Name, der nie das Layout sprengt: nach 2 Zeilen gekuerzt, voller Name als title. klasse z. B. "n", "drei", "eine"
+  window.kurzHtml = function (text, klasse) {
+    return '<span class="kappe' + (klasse ? " " + klasse : "") + '" title="' + esc(text) + '">' + esc(text) + "</span>";
+  };
+
   // "12 von 15"
   window.restText = function (p) {
-    return p.rest + " von " + p.menge;
+    return zahl(p.rest) + " von " + zahl(p.menge);
   };
 
   // Tabelle der ewigen Bestenliste. opts: {limit, jahre}
   window.bestenlisteHtml = function (stat, limit) {
     const jahre = stat.jahre || [];
     const zeilen = (stat.bestenliste || []).slice(0, limit || 9999);
-    let h = '<table class="daten"><thead><tr><th>Name</th>';
+    if (!zeilen.length) return '<p class="leer-text">Noch keine Daten. Sobald Siege eingetragen sind, erscheint hier die Bestenliste.</p>';
+    let h = '<table class="daten' + (jahre.length > 8 ? " eng" : "") + '"><thead><tr><th>Name</th>';
     jahre.forEach((j) => (h += "<th>" + j + "</th>"));
     h += '<th class="gesamt">Gesamt</th></tr></thead><tbody>';
     zeilen.forEach((z, i) => {
-      h += '<tr><td class="name"><span class="leise">' + (i + 1) + ".</span> " + esc(z.name) + "</td>";
+      h += '<tr><td class="name"><div class="name-zelle"><span class="nr leise">' + (i + 1) + ".</span>" + kurzHtml(z.name) + "</div></td>";
       jahre.forEach((j) => {
         const v = z.jahre[String(j)];
-        h += v == null ? '<td class="null">–</td>' : "<td>" + v + "</td>";
+        h += v == null ? '<td class="null">–</td>' : "<td>" + zahl(v) + "</td>";
       });
-      h += '<td class="gesamt">' + z.gesamt + "</td></tr>";
+      h += '<td class="gesamt">' + zahl(z.gesamt) + "</td></tr>";
     });
     return h + "</tbody></table>";
   };
 
   window.jahresvergleichHtml = function (stat) {
-    let h = '<table class="daten"><thead><tr><th>Jahr</th><th>Teilnehmer</th><th>Preise</th><th>Runden</th></tr></thead><tbody>';
+    if (!(stat.jahresvergleich || []).length) return '<p class="leer-text">Noch keine Daten.</p>';
+    let h = '<table class="daten' + ((stat.jahresvergleich || []).length > 8 ? " eng" : "") + '"><thead><tr><th>Jahr</th><th>Teilnehmer</th><th>Preise</th><th>Runden</th></tr></thead><tbody>';
     (stat.jahresvergleich || []).forEach((r) => {
-      h += "<tr><td>" + r.jahr + "</td><td>" + r.teilnehmer + "</td><td>" + r.preise_gesamt + "</td><td>" + r.runden + "</td></tr>";
+      h += "<tr><td>" + r.jahr + "</td><td>" + zahl(r.teilnehmer) + "</td><td>" + zahl(r.preise_gesamt) + "</td><td>" + zahl(r.runden) + "</td></tr>";
     });
     return h + "</tbody></table>";
   };
@@ -52,16 +72,16 @@
       arr && arr.length ? "<ol>" + arr.map((x) => "<li>" + fmt(x) + "</li>").join("") + "</ol>" : '<p class="leise">Noch keine Daten.</p>';
     const abend =
       (ma.ewig.length
-        ? "<p class='rekord-gross'>" + ma.ewig[0].siege + " Siege</p><p>" +
+        ? "<p class='rekord-gross'>" + anzahl(ma.ewig[0].siege, "Sieg", "Siege") + "</p><p>" +
           ma.ewig.map((e) => esc(e.name) + " (" + e.jahr + ")").join(", ") + "</p>"
         : '<p class="leise">Noch keine Daten.</p>') +
       (ma.je_jahr.length
-        ? "<ul class='je-jahr'>" + ma.je_jahr.map((e) => "<li><b>" + e.jahr + "</b> " + esc(e.name) + " · " + e.siege + "</li>").join("") + "</ul>"
+        ? "<ul class='je-jahr" + (ma.je_jahr.length > 6 ? " viele" : "") + "'>" + ma.je_jahr.map((e) => "<li><b>" + e.jahr + "</b>" + kurzHtml(e.name) + "<span class='anz'>· " + zahl(e.siege) + "</span></li>").join("") + "</ul>"
         : "");
     return {
       abend: abend,
-      teilnahmen: liste((r.teilnahmen || []).slice(0, 5), (x) => esc(x.name) + " <b>" + x.teilnahmen + "×</b>"),
-      pechvogel: liste((r.pechvogel || []).slice(0, 5), (x) => esc(x.name) + " <b>" + x.teilnahmen + "× ohne Sieg</b>"),
+      teilnahmen: liste((r.teilnahmen || []).slice(0, 5), (x) => kurzHtml(x.name) + "<b>" + zahl(x.teilnahmen) + "×</b>"),
+      pechvogel: '<p class="unterzeile">Teilnahmen ohne Sieg</p>' + liste((r.pechvogel || []).slice(0, 5), (x) => kurzHtml(x.name) + "<b>" + zahl(x.teilnahmen) + "×</b>"),
     };
   };
 

@@ -19,8 +19,10 @@ body { overflow: hidden; cursor: none; }
 .fortschritt { font-size: 1.55rem; color: var(--text-leise); font-variant-numeric: tabular-nums; }
 .fortschritt b { color: var(--text); font-weight: 600; }
 
-.ansicht { min-height: 0; animation: ein .45s ease both; }
-@keyframes ein { from { opacity: 0; transform: translateY(.6rem); } to { opacity: 1; transform: none; } }
+.ansicht { min-height: 0; }
+/* Ansichtswechsel (selten): Elemente erscheinen gestaffelt (JS vergibt --i), 340 ms ease-out, nie aus scale(0) */
+@keyframes ein { from { opacity: 0; transform: translateY(var(--versatz)); } to { opacity: 1; transform: none; } }
+.stufe { animation: ein var(--dauer-ein) var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * var(--stagger)); }
 .zentriert { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
 .gross { font-size: 2.2rem; margin: 0; }
 
@@ -37,9 +39,11 @@ body { overflow: hidden; cursor: none; }
 .links { display: flex; flex-direction: column; gap: 1.1rem; min-height: 0; }
 .rechts { display: flex; flex-direction: column; gap: 1.2rem; min-height: 0; }
 
-.phasenkopf { display: flex; align-items: baseline; gap: 1rem; }
-.phasenkopf h2 { margin: 0; font-size: 1.9rem; font-family: var(--schrift-titel); font-weight: 650; }
-.phasenkopf span { color: var(--text-leise); font-size: 1.3rem; }
+.phasenkopf { display: flex; align-items: baseline; gap: 1rem; min-width: 0; }
+.phasenkopf h2 { margin: 0; font-size: 1.9rem; font-family: var(--schrift-titel); font-weight: 650; flex: 0 1 auto; min-width: 0; line-height: 1.15;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.phasenkopf h2.lang { font-size: 1.5rem; }
+.phasenkopf span { color: var(--text-leise); font-size: 1.3rem; flex: none; white-space: nowrap; }
 
 .kacheln {
   display: grid;
@@ -63,30 +67,37 @@ body { overflow: hidden; cursor: none; }
   border-radius: 1.1rem;
   padding: 1rem 1.2rem .9rem;
   overflow: hidden;
-  transition: opacity .5s ease, background .5s ease, border-color .5s ease;
+  transition: opacity var(--dauer-kachel) var(--ease-out), background-color var(--dauer-kachel) var(--ease-out), border-color var(--dauer-kachel) var(--ease-out);
 }
-.kachel .ik { display: flex; font-size: 3.8rem; color: var(--akzent); grid-row: 1 / 3; transition: color .5s; }
-.kachel .name { font-size: 2rem; font-weight: 650; line-height: 1.15; align-self: end; min-width: 0; overflow-wrap: anywhere; hyphens: auto; }
+.kachel .ik { display: flex; font-size: 3.8rem; color: var(--akzent); grid-row: 1 / 3; transition: color var(--dauer-kachel) var(--ease-out); }
+.kachel .name { font-size: 2rem; font-weight: 650; line-height: 1.15; align-self: end; min-width: 0; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
 .kachel .name.lang { font-size: 1.4rem; }
+.kachel .name.sehr-lang { font-size: 1.1rem; }
 .kachel .rest { font-size: 1.6rem; color: var(--text-leise); font-variant-numeric: tabular-nums; align-self: start; }
 .kachel .rest b { color: var(--text); font-size: 3rem; line-height: 1; font-weight: 700; }
 .kachel .balken { grid-column: 1 / 3; height: .45rem; border-radius: .3rem; background: var(--flaeche-3); margin-top: .5rem; overflow: hidden; }
+.kachel .rest b { font-variant-numeric: tabular-nums; }
 /* Ab 10 Kacheln: kompakte Darstellung, damit alle sichtbar bleiben */
 .kacheln.viele { grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); grid-auto-rows: minmax(5.6rem, 8.5rem); gap: .7rem; }
 .viele .kachel { grid-template-rows: auto auto auto; row-gap: .1rem; column-gap: .6rem; padding: .55rem .7rem .5rem; border-radius: .8rem; }
 .viele .kachel .ik { font-size: 2.2rem; grid-row: 1 / 3; }
-.viele .kachel .name { font-size: 1.15rem; line-height: 1.1; }
-.viele .kachel .name.lang { font-size: 1.05rem; }
+/* Kompakt: Namen hoechstens 2 Zeilen, Groesse nach Laenge (JS: lang > 14, sehr-lang > 22 Zeichen); kein hyphens:auto noetig */
+.viele .kachel .name { font-size: 1.15rem; line-height: 1.1; -webkit-line-clamp: 2; line-clamp: 2; }
+.viele .kachel .name.lang { font-size: 1rem; }
+.viele .kachel .name.sehr-lang { font-size: .85rem; line-height: 1.05; }
 .viele .kachel .rest { font-size: 1rem; }
 .viele .kachel .rest b { font-size: 1.8rem; }
 .viele .kachel .balken { height: .3rem; margin-top: .25rem; }
-.kachel .balken i { display: block; height: 100%; background: var(--akzent); border-radius: .3rem; transition: width .7s ease; }
+/* Fortschritt ueber transform (GPU), nicht ueber width; Container rundet, Fuellung ist eckig */
+.kachel .balken i { display: block; width: 100%; height: 100%; background: var(--akzent); transform-origin: left center; transition: transform var(--dauer-kachel) var(--ease-out), background-color var(--dauer-kachel) var(--ease-out); }
 .kachel.leer { opacity: .38; background: transparent; }
 .kachel.leer .name { text-decoration: line-through; text-decoration-thickness: .12rem; }
 .kachel.leer .ik { color: var(--text-leise); }
 .kachel.wenig .balken i { background: var(--gold); }
 
-.spezial-reihe { display: flex; gap: 1rem; flex-wrap: wrap; }
+.spezial-reihe { display: flex; gap: 1rem; flex-wrap: wrap; min-width: 0; }
+.spezial-reihe:has(.spezial:nth-child(2)) .spezial { max-width: calc(50% - .5rem); }
 .spezial-reihe:empty { display: none; }
 .spezial {
   display: flex; align-items: center; gap: 1.1rem;
@@ -97,18 +108,23 @@ body { overflow: hidden; cursor: none; }
   box-shadow: 0 0 2.2rem rgba(245, 185, 66, .16);
 }
 .spezial .icon { font-size: 3rem; color: var(--gold); }
-.spezial .name { font-size: 1.7rem; font-weight: 700; }
+.spezial { max-width: 100%; min-width: 0; }
+.spezial > div { min-width: 0; }
+.spezial .name { font-size: 1.7rem; font-weight: 700; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; line-height: 1.15; }
 .spezial .hinweis { font-size: 1.1rem; color: var(--gold); letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
 
 .kommend { display: flex; gap: .9rem; flex-wrap: wrap; align-items: center; color: var(--text-leise); font-size: 1.1rem; }
 .kommend:empty { display: none; }
-.kommend .chip { display: inline-flex; align-items: center; gap: .6rem; padding: .45rem .9rem; border: 1px dashed var(--rand); border-radius: 2rem; }
+.kommend .chip { display: inline-flex; align-items: center; gap: .6rem; padding: .45rem .9rem; border: 1px dashed var(--rand); border-radius: 2rem; max-width: 48%; min-width: 0; }
+.kommend .chip > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kommend .chip .icon { font-size: 1.3rem; }
 .kommend .chip b { color: var(--text); font-weight: 600; }
 
 /* Letzter Gewinner */
 .letzter .etikett, .etikett { font-size: 1.1rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-leise); margin: 0 0 .5rem; }
 .letzter .wer { font-family: var(--schrift-titel); font-size: 2.9rem; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+.letzter .wer.lang { font-size: 2rem; }
+.letzter .was span:not(.icon) { min-width: 0; overflow-wrap: anywhere; }
 .letzter .was { display: flex; align-items: center; gap: .8rem; font-size: 1.8rem; margin-top: .7rem; color: var(--akzent); }
 .letzter .was .icon { font-size: 2.2rem; }
 .letzter .was.sonder { color: var(--gold); }
@@ -116,18 +132,21 @@ body { overflow: hidden; cursor: none; }
 .letzter .keiner { font-size: 1.6rem; color: var(--text-leise); }
 
 /* Top 10 */
-.top10 { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.top10 { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .top10 ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; flex: 1; align-content: start; }
-.top10 li { display: grid; grid-template-columns: 2rem 1fr auto; gap: .5rem; align-items: baseline; padding: .32rem 0; font-size: 1.45rem; border-bottom: 1px solid rgba(255, 255, 255, .05); }
+.top10 li { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: .5rem; align-items: baseline; padding: .32rem 0; font-size: 1.45rem; border-bottom: 1px solid rgba(255, 255, 255, .05); }
 .top10 li .platz { color: var(--text-leise); font-variant-numeric: tabular-nums; }
 .top10 li .anz { font-weight: 700; color: var(--akzent); font-variant-numeric: tabular-nums; }
 .top10 li:nth-child(-n+3) .name { font-weight: 650; }
 .top10 .leer { color: var(--text-leise); font-size: 1.3rem; }
+.top10 li .anz, .ende-top .anz { font-variant-numeric: tabular-nums; }
+.ende-top .leer, .leer-text { color: var(--text-leise); font-size: 1.5rem; grid-column: 1 / -1; text-align: center; padding: 1rem 0; }
+.statistik .leer-text { text-align: left; font-size: 1.3rem; }
 
 /* ---------------------------------------------------------------- Sonderrunde */
 .sonder { gap: 1.2rem; }
 .sonder .etikett { color: var(--gold); font-size: 2rem; margin: 0; }
-.sonder-icon .icon { font-size: 14rem; color: var(--gold); filter: drop-shadow(0 0 2rem rgba(245, 185, 66, .35)); animation: puls 3.2s ease-in-out infinite; }
+.sonder-icon .icon { font-size: 14rem; color: var(--gold); filter: drop-shadow(0 0 2rem rgba(245, 185, 66, .35)); animation: puls var(--dauer-puls) var(--ease-in-out) infinite; }
 @keyframes puls { 50% { transform: scale(1.04); } }
 .sonder h1 { margin: 0; font-family: var(--schrift-titel); font-size: 6rem; line-height: 1.05; }
 
@@ -136,7 +155,7 @@ body { overflow: hidden; cursor: none; }
 .ende h1 { margin: .4rem 0 0; font-family: var(--schrift-titel); font-size: 4.6rem; }
 .ende-info { font-size: 1.6rem; margin: 0 0 1rem; }
 .ende-top { width: min(80rem, 100%); display: grid; grid-template-columns: 1fr 1fr; column-gap: 3rem; text-align: left; }
-.ende-top .zeile { display: grid; grid-template-columns: 2.4rem 1fr auto; gap: .6rem; align-items: baseline; font-size: 2rem; padding: .5rem 0; border-bottom: 1px solid var(--rand); }
+.ende-top .zeile { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) auto; gap: .6rem; align-items: baseline; font-size: 2rem; padding: .5rem 0; border-bottom: 1px solid var(--rand); }
 .ende-top .platz { color: var(--text-leise); }
 .ende-top .anz { color: var(--akzent); font-weight: 700; }
 .ende-top .zeile.erster .name { color: var(--gold); font-weight: 700; }
@@ -145,6 +164,16 @@ body { overflow: hidden; cursor: none; }
 .statistik { display: grid; grid-template-columns: 1.55fr 1fr; gap: 1.6rem; }
 .statistik .liste { overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
 .statistik table.daten { font-size: 1.3rem; }
+.statistik .kappe { -webkit-line-clamp: 2; line-clamp: 2; line-height: 1.15; }
+.statistik td.name { min-width: 9rem; }
+/* Viele Jahre (ab 9): Tabellen enger setzen, damit Gesamt und alle Karten sichtbar bleiben */
+.statistik table.daten.eng { font-size: 1.1rem; }
+.statistik table.daten.eng th, .statistik table.daten.eng td { padding: .2rem .15rem; }
+.statistik table.daten.eng th:first-child, .statistik table.daten.eng td.name { width: 13rem; min-width: 11rem; padding-left: .3rem; }
+.statistik table.daten.eng th.gesamt, .statistik table.daten.eng td.gesamt { padding-right: .3rem; }
+.stat-rechts table.daten.eng { font-size: 1rem; }
+.stat-rechts table.daten.eng th, .stat-rechts table.daten.eng td { padding: .03rem .5rem; line-height: 1.2; }
+.rekord ul.viele { columns: 2; font-size: .95rem; }
 .statistik table.daten th, .statistik table.daten td { padding: .3rem .65rem; }
 .stat-rechts { display: flex; flex-direction: column; gap: 1.1rem; min-height: 0; }
 .stat-rechts table.daten { font-size: 1.2rem; }
@@ -152,6 +181,7 @@ body { overflow: hidden; cursor: none; }
 .rekord .rekord-gross { font-size: 2.6rem; font-weight: 700; color: var(--gold); font-family: var(--schrift-titel); }
 .rekord ol { margin: 0; padding-left: 1.5rem; font-size: 1.2rem; line-height: 1.55; }
 .rekord ul { margin: .4rem 0 0; padding: 0; list-style: none; font-size: 1.05rem; color: var(--text-leise); columns: 2; }
+.rekord p, .rekord li { overflow-wrap: anywhere; }
 .rekord b { color: var(--akzent); font-weight: 650; }
 .rekord-zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
 
@@ -161,8 +191,10 @@ body { overflow: hidden; cursor: none; }
   display: flex; align-items: center; justify-content: center;
   background: rgba(8, 11, 16, .78);
   backdrop-filter: blur(.6rem);
-  animation: ein .3s ease both;
+  opacity: 0;
+  transition: opacity var(--dauer-overlay-aus) var(--ease-out);        /* aus: schnell */
 }
+.overlay.an { opacity: 1; transition-duration: var(--dauer-overlay-bg); }  /* ein: etwas laenger */
 .overlay-karte {
   text-align: center;
   padding: 3rem 5rem;
@@ -171,11 +203,23 @@ body { overflow: hidden; cursor: none; }
   border: 1px solid var(--rand);
   box-shadow: var(--schatten);
   max-width: 90vw;
-  animation: auf .45s cubic-bezier(.2, .9, .3, 1.2) both;
 }
-@keyframes auf { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: none; } }
+/* Karte: scale .95 -> 1, ease-out, ohne Ueberschwingen; Inhalte folgen gestaffelt */
+.overlay.an .overlay-karte { animation: auf var(--dauer-overlay) var(--ease-out) backwards; }
+@keyframes auf { from { opacity: 0; transform: scale(var(--skala-ein)); } to { opacity: 1; transform: none; } }
+.overlay.an .overlay-karte > * { animation: ein var(--dauer-ein) var(--ease-out) backwards; animation-delay: calc(var(--overlay-verzug) + var(--i, 0) * var(--overlay-stagger)); }
+.overlay-karte > :nth-child(2) { --i: 1; }
+.overlay-karte > :nth-child(3) { --i: 2; }
+.overlay-karte > :nth-child(4) { --i: 3; }
 .overlay-karte .klein { font-size: 1.6rem; color: var(--text-leise); letter-spacing: .08em; text-transform: uppercase; }
-.overlay-karte .wer { font-family: var(--schrift-titel); font-size: 6rem; font-weight: 700; line-height: 1.08; margin: .4rem 0; overflow-wrap: anywhere; }
+.overlay-karte .wer { font-family: var(--schrift-titel); font-size: 6rem; font-weight: 700; line-height: 1.08; margin: .4rem 0; overflow-wrap: anywhere; text-wrap: balance; }
+.overlay-karte .was span:not(.icon) { min-width: 0; overflow-wrap: anywhere; }
+/* Lange Namen im Overlay: Schrift kleiner statt aus dem Bild zu laufen */
+.overlay-karte .wer.lang { font-size: 4.4rem; }
+.overlay-karte .wer.sehr-lang { font-size: 3.2rem; }
+.overlay-karte .was.lang, .overlay-karte .weiter.lang { font-size: 2.2rem; }
+.overlay-karte.wechsel .wer.lang { font-size: 3.4rem; }
+.overlay-karte.wechsel .wer.sehr-lang { font-size: 2.6rem; }
 .overlay-karte .was { display: flex; align-items: center; justify-content: center; gap: 1.2rem; font-size: 3.4rem; color: var(--akzent); }
 .overlay-karte .was .icon { font-size: 5rem; }
 .overlay-karte .was.sonder { color: var(--gold); }
@@ -235,14 +279,14 @@ body[data-design="hell"] .kachel .name { font-weight: 800; font-size: 2.15rem; }
 body[data-design="hell"] .kachel .name.lang { font-size: 1.55rem; }
 body[data-design="hell"] .viele .kachel { padding: .45rem .6rem .5rem; }
 body[data-design="hell"] .viele .kachel .name { font-size: 1.25rem; }
-body[data-design="hell"] .viele .kachel .name.lang { font-size: 1.15rem; }
+body[data-design="hell"] .viele .kachel .name.lang { font-size: 1.05rem; }
 body[data-design="hell"] .kachel .rest { color: var(--text-leise); font-weight: 700; font-size: 1.7rem; }
 body[data-design="hell"] .kachel .rest b { color: var(--text); font-weight: 800; font-size: 3.3rem; }
 body[data-design="hell"] .viele .kachel .rest { font-size: 1.1rem; }
 body[data-design="hell"] .viele .kachel .rest b { font-size: 2rem; }
 body[data-design="hell"] .kachel .balken { height: 1rem; background: var(--flaeche-3); border-radius: .5rem; margin-top: .55rem; }
 body[data-design="hell"] .viele .kachel .balken { height: .8rem; margin-top: .3rem; }
-body[data-design="hell"] .kachel .balken i { background: var(--akzent); border-radius: .5rem; }
+body[data-design="hell"] .kachel .balken i { background: var(--akzent); }
 /* Wenig uebrig: roter Rahmen und rote Zahl (die Zahl bleibt gross sichtbar) */
 body[data-design="hell"] .kachel.wenig { border-color: var(--akzent); }
 body[data-design="hell"] .kachel.wenig .rest b { color: var(--akzent); }
@@ -294,8 +338,8 @@ body[data-design="hell"] .sonder .gross { color: #fff; font-weight: 700; font-si
 body[data-design="hell"] .ende h1 { font-weight: 800; color: var(--akzent); font-size: 5rem; }
 body[data-design="hell"] .ende-info { color: var(--text-leise); font-weight: 700; font-size: 1.8rem; }
 body[data-design="hell"] .ende-top { width: min(92rem, 100%); }
-body[data-design="hell"] .ende-top .zeile { grid-template-columns: 3.6rem 1fr auto; }
-body[data-design="hell"] .top10 li { grid-template-columns: 2.7rem 1fr auto; }
+body[data-design="hell"] .ende-top .zeile { grid-template-columns: 3.6rem minmax(0, 1fr) auto; }
+body[data-design="hell"] .top10 li { grid-template-columns: 2.7rem minmax(0, 1fr) auto; }
 body[data-design="hell"] .ende-top .zeile { border-bottom: .15rem solid #222; font-size: 2.6rem; padding: .65rem 0; font-weight: 700; }
 body[data-design="hell"] .ende-top .platz { color: var(--text-leise); }
 body[data-design="hell"] .ende-top .anz { color: var(--text); font-weight: 800; }
@@ -347,3 +391,60 @@ body[data-design="hell"] .overlay-karte.wechsel .weiter b { font-weight: 800; }
   body[data-design="hell"] .sonder h1 { font-size: 5.4rem; }
   body[data-design="hell"] .ende-top .zeile { font-size: 2.1rem; }
 }
+
+/* Sehr lange Namen (Anhang, nach dem Design "hell" wegen gleicher Spezifitaet) */
+body[data-design="hell"] .kachel .name.sehr-lang { font-size: 1.2rem; }
+body[data-design="hell"] .viele .kachel .name.sehr-lang { font-size: .85rem; }
+body[data-design="hell"] .phasenkopf h2.lang { font-size: 1.8rem; }
+body[data-design="hell"] .overlay-karte .wer.lang { font-size: 5rem; }
+body[data-design="hell"] .overlay-karte .wer.sehr-lang { font-size: 3.6rem; }
+body[data-design="hell"] .overlay-karte .was.lang, body[data-design="hell"] .overlay-karte .weiter.lang { font-size: 2.6rem; }
+body[data-design="hell"] .overlay-karte.wechsel .wer.lang { font-size: 3.8rem; }
+body[data-design="hell"] .overlay-karte.wechsel .wer.sehr-lang { font-size: 2.8rem; }
+@media (max-aspect-ratio: 3/2) {
+  .letzter .wer.lang { font-size: 1.8rem; }
+  body[data-design="hell"] .letzter .wer.lang { font-size: 1.8rem; }
+}
+
+/* Viele Jahre im Design "hell" (gleiche Spezifitaet wie die hell-Regeln, daher nach ihnen) */
+body[data-design="hell"] .statistik table.daten.eng { font-size: 1.15rem; }
+body[data-design="hell"] .statistik table.daten.eng th, body[data-design="hell"] .statistik table.daten.eng td { padding: .2rem .3rem; }
+body[data-design="hell"] .stat-rechts table.daten.eng { font-size: 1.05rem; }
+body[data-design="hell"] .stat-rechts table.daten.eng th, body[data-design="hell"] .stat-rechts table.daten.eng td { padding: .03rem .5rem; line-height: 1.2; }
+body[data-design="hell"] .rekord ul.viele { font-size: 1rem; }
+.letzter .wer.kappe.lang { -webkit-line-clamp: 2; line-clamp: 2; }
+
+body[data-design="hell"] .statistik table.daten.eng th, body[data-design="hell"] .statistik table.daten.eng td { padding: .2rem .15rem; }
+body[data-design="hell"] .statistik table.daten.eng th:first-child, body[data-design="hell"] .statistik table.daten.eng td.name { padding-left: .3rem; }
+body[data-design="hell"] .statistik table.daten.eng th.gesamt, body[data-design="hell"] .statistik table.daten.eng td.gesamt { padding-right: .3rem; }
+/* Viele Jahre: rechte Spalte etwas kompakter, damit alle vier Karten ins Bild passen */
+.statistik.eng .stat-rechts, body[data-design="hell"] .statistik.eng .stat-rechts { gap: .5rem; }
+.statistik.eng .stat-rechts .karte, body[data-design="hell"] .statistik.eng .stat-rechts .karte { padding-top: .5rem; padding-bottom: .55rem; }
+.statistik.eng .stat-rechts table.daten th, .statistik.eng .stat-rechts table.daten td,
+body[data-design="hell"] .statistik.eng .stat-rechts table.daten th, body[data-design="hell"] .statistik.eng .stat-rechts table.daten td { padding-top: 0; padding-bottom: 0; line-height: 1.15; }
+.statistik.eng .rekord ol, body[data-design="hell"] .statistik.eng .rekord ol { font-size: 1.05rem; line-height: 1.2; }
+.statistik.eng .rekord .rekord-gross, body[data-design="hell"] .statistik.eng .rekord .rekord-gross { font-size: 1.8rem; }
+.statistik.eng .rekord p, body[data-design="hell"] .statistik.eng .rekord p { font-size: 1.05rem; }
+
+/* Sonderrunde mit langem Preisnamen: Schrift kleiner, Icon etwas kleiner, nichts laeuft aus dem Bild */
+.sonder h1.lang { font-size: 4rem; }
+.sonder h1.sehr-lang { font-size: 3rem; }
+.sonder h1.lang ~ .gross, .sonder h1.sehr-lang ~ .gross { font-size: 1.8rem; }
+body[data-design="hell"] .sonder h1.lang { font-size: 4.6rem; }
+body[data-design="hell"] .sonder h1.sehr-lang { font-size: 3.4rem; }
+.sonder:has(h1.lang) .sonder-icon .icon, .sonder:has(h1.sehr-lang) .sonder-icon .icon,
+body[data-design="hell"] .sonder:has(h1.lang) .sonder-icon .icon, body[data-design="hell"] .sonder:has(h1.sehr-lang) .sonder-icon .icon { font-size: 9rem; }
+.ende-top .kappe { -webkit-line-clamp: 2; line-clamp: 2; line-height: 1.1; }
+.ende-top .name.lang { font-size: .72em; }
+.kacheln .leer-text { text-align: left; padding: .2rem 0 0; font-size: 1.6rem; }
+/* Viele Jahre: Rekordkarten noch etwas dichter, damit alle Karten ins Bild passen (Namen bleiben zweizeilig) */
+.statistik.eng .stat-rechts .karte h2, body[data-design="hell"] .statistik.eng .stat-rechts .karte h2 { margin-bottom: .15rem; font-size: 1rem; }
+.statistik.eng .stat-rechts table.daten.eng, body[data-design="hell"] .statistik.eng .stat-rechts table.daten.eng { font-size: .9rem; }
+.statistik.eng .stat-rechts table.daten.eng th, .statistik.eng .stat-rechts table.daten.eng td,
+body[data-design="hell"] .statistik.eng .stat-rechts table.daten.eng th, body[data-design="hell"] .statistik.eng .stat-rechts table.daten.eng td { line-height: 1.1; }
+.statistik.eng .rekord ul.viele, body[data-design="hell"] .statistik.eng .rekord ul.viele { font-size: .85rem; line-height: 1.12; margin-top: .2rem; }
+.statistik.eng .rekord ol, body[data-design="hell"] .statistik.eng .rekord ol { font-size: .98rem; line-height: 1.12; margin-top: 0; }
+.statistik.eng .rekord .rekord-gross, body[data-design="hell"] .statistik.eng .rekord .rekord-gross { font-size: 1.6rem; line-height: 1; }
+.statistik.eng .rekord .kappe { line-height: 1.12; }
+body[data-design="hell"] .viele .kachel.leer .name { text-decoration-thickness: .1rem; }
+.rekord-zwei { grid-template-columns: 1.5fr 1fr; }

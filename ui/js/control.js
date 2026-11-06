@@ -27,6 +27,8 @@
   }
 
   let toastTimer = null;
+  let toastAusTimer = null;
+  const AUS_MS = 170; // etwas laenger als --dauer-aus (150 ms), dann erst display:none
   // text: String oder Liste von Zeilen; opts.rueckgaengig: Button "Rueckgaengig" anzeigen
   function toast(text, fehler, opts) {
     const t = $("toast");
@@ -34,15 +36,24 @@
     const lang = (opts && opts.rueckgaengig) || zeilen.length > 1;
     t.innerHTML = zeilen.map((z, i) => "<div" + (i > 0 ? ' class="hinweis-zeile"' : "") + ">" + esc(z) + "</div>").join("") +
       (opts && opts.rueckgaengig ? '<button class="knopf toast-knopf" data-act="rueckgaengig">Rückgängig</button>' : "");
-    t.className = "toast" + (fehler ? " fehler" : "");
-    t.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (t.hidden = true), fehler ? 6000 : lang ? 9000 : 3500);
+    clearTimeout(toastTimer); clearTimeout(toastAusTimer);
+    t.className = "toast" + (fehler ? " fehler" : "") + " sichtbar";
+    if (t.hidden) {
+      // Einblenden: erst im Ausgangszustand zeichnen lassen, dann Klasse setzen (Transition)
+      t.classList.remove("sichtbar");
+      t.hidden = false;
+      void t.offsetWidth;
+      t.classList.add("sichtbar");
+    }
+    toastTimer = setTimeout(() => {
+      t.classList.remove("sichtbar");
+      toastAusTimer = setTimeout(() => (t.hidden = true), AUS_MS);
+    }, fehler ? 6000 : lang ? 9000 : 3500);
   }
 
   // Hinweis nach einem Eintrag: Runde/Name/Preis, ggf. Phasenwechsel oder Spielende, plus "Rueckgaengig"
   function eintragHinweis(e) {
-    const zeilen = ["Runde " + e.nr + ": " + e.name + " – " + e.preis_name];
+    const zeilen = ["Runde " + zahl(e.nr) + ": " + e.name + " – " + e.preis_name];
     const f = e.folge;
     if (f && f.typ === "phasenwechsel") {
       zeilen.push((f.von_name ? "Phase „" + f.von_name + "“" : "Phase") + " beendet – " +
@@ -54,14 +65,31 @@
   }
 
   // ------------------------------------------------------------------ Dialoge
+  let modalAusTimer = null;
   function openModal(html) {
+    const m = $("modal");
+    clearTimeout(modalAusTimer);
     $("modal-karte").innerHTML = html;
-    $("modal").hidden = false;
+    m.classList.remove("sofort");
+    if (m.hidden) {
+      m.hidden = false;
+      void m.offsetWidth; // Ausgangszustand zeichnen, dann Klasse setzen
+    }
+    m.classList.add("offen");
     const f = $("modal-karte").querySelector("input[type=text],input[type=search],input[type=number]");
     if (f) setTimeout(() => f.focus(), 30);
   }
-  function closeModal() { $("modal").hidden = true; $("modal-karte").innerHTML = ""; modalRefresh = null; }
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("modal").hidden) closeModal(); });
+  // Schliessen: per Klick 150 ms ausblenden; per Tastatur (Escape) sofort, ohne Animation
+  function closeModal(sofort) {
+    const m = $("modal");
+    modalRefresh = null;
+    clearTimeout(modalAusTimer);
+    if (sofort) m.classList.add("sofort");
+    m.classList.remove("offen");
+    const fertig = () => { m.hidden = true; m.classList.remove("sofort"); $("modal-karte").innerHTML = ""; };
+    if (sofort) fertig(); else modalAusTimer = setTimeout(fertig, AUS_MS);
+  }
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("modal").hidden) closeModal(true); });
 
   function bestaetigen(titel, text, knopf) {
     return new Promise((res) => {
@@ -134,7 +162,7 @@
     $("start-jahre").innerHTML = Z.jahre_info.length
       ? Z.jahre_info.map((j) =>
           '<button class="jahr-kachel' + (j.jahr === Z.jahr ? " aktiv" : "") + '" data-act="jahr" data-jahr="' + j.jahr + '"><b>' + j.jahr + "</b><span>" +
-          j.preise + " Preise · " + j.teilnehmer + " angemeldet<br>" + (j.beendet ? "beendet" : j.siege + " Siege") + "</span></button>").join("")
+          anzahl(j.preise, "Preis", "Preise") + " · " + zahl(j.teilnehmer) + " angemeldet<br>" + (j.beendet ? "beendet" : anzahl(j.siege, "Sieg", "Siege")) + "</span></button>").join("")
       : '<p class="leer-text">Noch kein Spiel vorhanden. Lege unten das erste an oder importiere eine Excel-Datei.</p>';
     const el = $("neu-jahr");
     const vorschlag = Z.jahre.length ? Math.max(...Z.jahre) + 1 : new Date().getFullYear();
@@ -148,7 +176,7 @@
     // Phasen
     $("vb-phasen").innerHTML = s.phasen.length ? s.phasen.map((p, i) =>
       '<div class="phasen-zeile"><input type="text" class="phase-name" data-id="' + p.id + '" value="' + esc(p.name) + '">' +
-      '<span class="rest">' + p.gesamt + " Preise</span>" +
+      '<span class="rest">' + anzahl(p.gesamt, "Preis", "Preise") + "</span>" +
       '<button class="knopf" data-act="phase-hoch" data-id="' + p.id + '"' + (i === 0 ? " disabled" : "") + ' title="Nach vorn">↑</button>' +
       '<button class="knopf" data-act="phase-runter" data-id="' + p.id + '"' + (i === s.phasen.length - 1 ? " disabled" : "") + ' title="Nach hinten">↓</button>' +
       '<button class="knopf gefahr" data-act="phase-loeschen" data-id="' + p.id + '" title="Phase löschen">✕</button></div>').join("")
@@ -167,13 +195,13 @@
     $("vb-zaehler").textContent = s.anwesende.length + " angemeldet";
     const pe = Z.personen.filter((p) => passt(p.name, such));
     $("vb-personen").innerHTML = pe.length ? pe.map((p) =>
-      '<button class="name-kachel' + (p.anwesend ? " angemeldet" : "") + '" data-act="toggle-person" data-id="' + p.id + '">' + esc(p.name) +
+      '<button class="name-kachel' + (p.anwesend ? " angemeldet" : "") + '" data-act="toggle-person" data-id="' + p.id + '">' + kurzHtml(p.name, "n") +
       (p.ist_team ? '<span class="zusatz">Team</span>' : "") + (p.anwesend ? '<span class="haken-zeichen">✓</span>' : "") + "</button>").join("")
       : '<p class="leer-text">Keine Person gefunden.</p>';
   }
   function preisZeile(p) {
     return '<button class="preis-zeile' + (p.spezial ? " spezial" : "") + '" data-act="preis-bearbeiten" data-id="' + p.id + '">' + icon(p.icon) +
-      "<span>" + esc(p.name) + '</span><span class="menge">' + (p.vergeben ? p.rest + " von " + p.menge + " übrig" : p.menge + " Stück") + "</span><span class='leise'>bearbeiten</span></button>";
+      "<span>" + esc(p.name) + '</span><span class="menge">' + (p.vergeben ? zahl(p.rest) + " von " + zahl(p.menge) + " übrig" : zahl(p.menge) + " Stück") + "</span><span class='leise'>bearbeiten</span></button>";
   }
 
   // ---- Spiel
@@ -186,9 +214,10 @@
     const such = $("sp-suche").value;
     const liste = s.anwesende.filter((a) => passt(a.name, such));
     $("sp-titel-wer").textContent = sr ? "Wer gewinnt " + sr.name + "?" : "1 · Wer hat gewonnen?";
+    $("sp-titel-wer").title = sr ? $("sp-titel-wer").textContent : "";
     $("sp-namen").innerHTML = liste.length ? liste.map((a) =>
-      '<button class="name-kachel' + (a.id === gewaehlt && !sr ? " gewaehlt" : "") + '" data-act="person" data-id="' + a.id + '">' + esc(a.name) +
-      (a.ist_team ? '<span class="zusatz">Team</span>' : "") + (a.siege ? '<span class="badge">' + a.siege + "</span>" : "") + "</button>").join("")
+      '<button class="name-kachel' + (a.id === gewaehlt && !sr ? " gewaehlt" : "") + (a.siege ? " mit-badge" : "") + '" data-act="person" data-id="' + a.id + '">' + kurzHtml(a.name, "n") +
+      (a.ist_team ? '<span class="zusatz">Team</span>' : "") + (a.siege ? '<span class="badge">' + zahl(a.siege) + "</span>" : "") + "</button>").join("")
       : '<p class="leer-text">' + (s.anwesende.length ? "Niemand gefunden." : "Noch niemand angemeldet. Unter „Werkzeuge“ Teilnehmer nachtragen.") + "</p>";
 
     // Preise
@@ -208,7 +237,7 @@
     $("sp-preise").hidden = !!sr;
     $("sp-preise").innerHTML = wb.map((p) =>
       '<button class="preis-kachel' + (gewaehlt ? " bereit" : "") + '" data-act="preis" data-id="' + p.id + '">' + icon(p.icon) +
-      '<span class="name">' + esc(p.name) + '</span><span class="rest"><b>' + p.rest + "</b> von " + p.menge + "</span></button>").join("");
+      kurzHtml(p.name, "name drei") + '<span class="rest"><b>' + zahl(p.rest) + "</b> von " + zahl(p.menge) + "</span></button>").join("");
     $("sp-spezial").hidden = !!sr;
     $("sp-spezial").innerHTML = s.beendet
       ? '<div class="ende-banner">Alle Preise sind vergeben. Das Spiel ist beendet.</div>'
@@ -217,14 +246,14 @@
 
     // Status
     const l = s.letzter_sieg;
-    const fortschritt = s.beendet ? "Beendet nach " + s.runden_gespielt + " Runden"
-      : "Runde " + s.runde + " · noch " + s.rest_gesamt + (s.rest_gesamt === 1 ? " Preis" : " Preise") + (s.phase_nr ? " · Phase " + s.phase_nr + "/" + s.phasen_anzahl : "");
+    const fortschritt = s.beendet ? "Beendet nach " + anzahl(s.runden_gespielt, "Runde", "Runden")
+      : "Runde " + zahl(s.runde) + " · noch " + anzahl(s.rest_gesamt, "Preis", "Preise") + (s.phase_nr ? " · Phase " + s.phase_nr + "/" + s.phasen_anzahl : "");
     $("sp-status").innerHTML = '<h2>Stand</h2><div class="fortschritt">' + esc(fortschritt) + "</div>" +
-      (l ? '<div class="letzter"><div class="zeile' + (l.sonderrunde ? " sonder" : "") + '">Runde ' + l.nr + ": " + esc(l.name) + " – " + esc(l.preis_name) + "</div></div>"
+      (l ? '<div class="letzter"><div class="zeile' + (l.sonderrunde ? " sonder" : "") + '">Runde ' + zahl(l.nr) + ": " + esc(l.name) + " – " + esc(l.preis_name) + "</div></div>"
         : '<div class="letzter leise">Noch keine Eintragung.</div>') +
       '<button class="knopf" data-act="rueckgaengig"' + (l ? "" : " disabled") + ">Rückgängig</button>";
     $("sp-siege").innerHTML = s.letzte_siege.length ? s.letzte_siege.map((x) =>
-      '<li class="' + (x.sonderrunde ? "sonder" : "") + '"><span class="nr">' + x.nr + '.</span><span>' + esc(x.name) + ' <span class="was">– ' + esc(x.preis_name) + "</span></span></li>").join("")
+      '<li class="' + (x.sonderrunde ? "sonder" : "") + '"><span class="nr">' + zahl(x.nr) + '.</span><span>' + esc(x.name) + ' <span class="was">– ' + esc(x.preis_name) + "</span></span></li>").join("")
       : '<li class="leise">Noch keine Siege.</li>';
   }
 
@@ -251,10 +280,10 @@
     jahre.forEach((j) => {
       const existiert = j.existiert || bestand.has(j.jahr);
       h += '<label class="xl-jahr"><input type="checkbox" data-act="xl-jahr" data-jahr="' + j.jahr + '"' + (XLjahre.has(j.jahr) ? " checked" : "") + "><div><h3>" + j.jahr + "</h3>" +
-        '<div class="details">' + j.personen + " Personen · " + j.siege + " Siege · " + j.menge_gesamt + " Preise insgesamt<br>" +
+        '<div class="details">' + anzahl(j.personen, "Person", "Personen") + " · " + anzahl(j.siege, "Sieg", "Siege") + " · " + anzahl(j.menge_gesamt, "Preis", "Preise") + " insgesamt<br>" +
         j.preise.map((p) => esc(p.name) + " " + p.vergeben + "/" + p.menge).join(" · ") + "</div>" +
         (existiert ? '<div class="existiert">Dieses Jahr gibt es schon in der App.</div>' : "") +
-        ((j.live_siege || 0) > 0 ? '<div class="warn live">ACHTUNG: In der App wurden für dieses Jahr ' + j.live_siege + " Siege live eingetragen (nicht aus Excel). Beim Überschreiben gehen sie verloren!</div>" : "") +
+        ((j.live_siege || 0) > 0 ? '<div class="warn live">ACHTUNG: In der App wurden für dieses Jahr ' + anzahl(j.live_siege, "Sieg", "Siege") + " live eingetragen (nicht aus Excel). Beim Überschreiben gehen sie verloren!</div>" : "") +
         (j.warnungen || []).map((w) => '<div class="warn">Hinweis: ' + esc(w) + "</div>").join("") + "</div></label>";
     });
     const braucht = jahre.some((j) => XLjahre.has(j.jahr) && (j.existiert || bestand.has(j.jahr)));
@@ -322,7 +351,7 @@
     const vorwahl = (s.preise.find((p) => p.waehlbar) || s.preise[0]).id;
     openModal(
       "<h2>Preis nachlegen</h2>" +
-      '<label class="feld"><span>Preis</span><select id="nl-preis">' + s.preise.map((p) => '<option value="' + p.id + '"' + (p.id === vorwahl ? " selected" : "") + ">" + esc(p.name) + " (" + p.rest + " von " + p.menge + ")</option>").join("") + "</select></label>" +
+      '<label class="feld"><span>Preis</span><select id="nl-preis">' + s.preise.map((p) => '<option value="' + p.id + '"' + (p.id === vorwahl ? " selected" : "") + ">" + esc(p.name) + " (" + zahl(p.rest) + " von " + zahl(p.menge) + ")</option>").join("") + "</select></label>" +
       '<label class="feld"><span>Anzahl, die dazukommt</span><input type="number" id="nl-anzahl" min="1" value="1"></label>' +
       '<div class="menge-schnell"><button class="knopf" data-plus="1">+1</button><button class="knopf" data-plus="5">+5</button><button class="knopf" data-plus="10">+10</button></div>' +
       '<div class="modal-aktionen"><button class="knopf" data-m="abbruch">Abbrechen</button><button class="knopf primaer" data-m="ok">Nachlegen</button></div>');
@@ -350,7 +379,7 @@
     const liste = () => {
       const such = $("nt-suche") ? $("nt-suche").value : "";
       const pe = Z.personen.filter((p) => !p.anwesend && passt(p.name, such));
-      $("nt-liste").innerHTML = pe.length ? pe.map((p) => '<button class="name-kachel" data-id="' + p.id + '">' + esc(p.name) + (p.ist_team ? '<span class="zusatz">Team</span>' : "") + "</button>").join("")
+      $("nt-liste").innerHTML = pe.length ? pe.map((p) => '<button class="name-kachel" data-id="' + p.id + '">' + kurzHtml(p.name, "n") + (p.ist_team ? '<span class="zusatz">Team</span>' : "") + "</button>").join("")
         : '<p class="leer-text">Niemand mehr zum Nachtragen.</p>';
     };
     modalRefresh = liste;
@@ -390,7 +419,7 @@
     "phase-runter": (el) => call("phase_verschieben", el.dataset.id, 1),
     "phase-loeschen": async (el) => {
       const ph = spiel().phasen.find((p) => p.id === el.dataset.id);
-      const ja = await bestaetigen("Phase löschen?", "Die Phase „" + ph.name + "“ wird samt ihren " + ph.preise.length + " Preisen entfernt.", "Löschen");
+      const ja = await bestaetigen("Phase löschen?", "Die Phase „" + ph.name + "“ wird " + (ph.preise.length ? "samt " + (ph.preise.length === 1 ? "ihrem Preis" : "ihren " + ph.preise.length + " Preisen") : "ohne Preise") + " entfernt.", "Löschen");
       if (ja) await call("phase_loeschen", el.dataset.id);
     },
     "preis-neu": () => {
@@ -454,7 +483,7 @@
       const live = XL.vorschau.jahre.filter((j) => XLjahre.has(j.jahr) && XLueber && (j.live_siege || 0) > 0);
       if (live.length) {
         const ja = await bestaetigen("Live eingetragene Siege gehen verloren",
-          live.map((j) => j.jahr + ": " + j.live_siege + " Siege").join(", ") + " – diese wurden in der App live eingetragen und werden durch den Import überschrieben. Wirklich überschreiben?", "Ja, überschreiben");
+          live.map((j) => j.jahr + ": " + anzahl(j.live_siege, "Sieg", "Siege")).join(", ") + " – diese wurden in der App live eingetragen und werden durch den Import überschrieben. Wirklich überschreiben?", "Ja, überschreiben");
         if (!ja) return;
       }
       const r = await call("excel_importieren", XL.pfad, jahre, XLueber);

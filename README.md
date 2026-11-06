@@ -39,6 +39,17 @@ Die Spielleitung bedient alles am Laptop, das Publikum sieht den aktuellen Stand
 - Beim Import landen alle Preise in Phase 1 „Wurst & Teigwaren“, Preise mit „Sachpreis“ im Namen in Phase 2 „Werbegeschenke“. Spezialpreise entstehen beim Import nicht und müssen ggf. in der Vorbereitung markiert werden.
 - Enthält ein zu überschreibendes Jahr live eingetragene Siege, warnt die Vorschau deutlich und der Import fragt vorher extra nach.
 
+## Gestaltung
+
+Die Oberfläche folgt einheitlichen Bewegungs- und Darstellungsregeln (alles in `ui/css/basis.css`, ohne Bibliotheken, offline):
+
+- **Bedienfenster (60 bis 80 Eintragungen pro Abend):** Eintragungen wirken sofort, ohne verzögernde Animationen. Knöpfe und Kacheln geben beim Drücken leicht nach (`scale(0.97)`, 140 ms; Ausnahme: breite Preiszeilen in der Vorbereitung geben nur auf `.985` nach); Hover nur mit Maus und nie auf grüne (angemeldete) oder gewählte Namenskacheln. Hinweis erscheint in 200 ms und verschwindet in 150 ms, Dialoge blenden in 220 ms ein (zentriert) und in 150 ms aus. Escape schließt Dialoge sofort. Tastatur-Fokus ist sichtbar (`:focus-visible`).
+- **Beamer:** Nur seltene Momente (Ansichtswechsel, Sieg, Phasenwechsel, Sonderrunde, Ende) sind lebendiger: Elemente erscheinen gestaffelt (40 ms Abstand), die Sieg-Karte wächst von 95 % auf 100 % ohne Überschwingen und blendet schneller aus als ein. Der Fortschrittsbalken der Kacheln läuft über `transform`, die Restmenge wechselt mit einem leichten Zahlen-Tick.
+- **Beamer „hell“:** Dicke Ränder, kein Text heller als `#3A3A3A`, nichts über Deckkraft oder Schatten. Der halbtransparente Ring-Schatten statt Rand gilt nur im Bedienfenster.
+- **Bewegung nur über Variablen:** Kurven `--ease-out` / `--ease-in-out` und Dauern `--dauer-*` stehen in `basis.css`; nirgends `transition: all`, nie `ease-in`, nie `scale(0)`. Bei `prefers-reduced-motion` entfallen Versatz, Skalierung und Pulsieren, Ein- und Ausblenden bleibt.
+- **Lange Namen und leere Zustände:** Namen brechen um oder werden nach zwei Zeilen gekürzt (voller Name als Tooltip); leere Listen zeigen einen freundlichen Hinweis. Mehrzahl und Tausenderpunkte folgen der deutschen Regel (`plural()`, `anzahl()`, `zahl()` in `shared.js`).
+- **Worst-Case-Test:** `ui/control.html?demo&extrem` bzw. `ui/beamer.html?demo&extrem` (auch mit `&ansicht=statistik|ende|sonderrunde|sieg`) zeigt erfundene Extremdaten: 70 Anwesende, sehr lange Namen und Teams, Ein-Buchstaben-Namen, dreistellige Mengen, 148 Runden, 12 Vorjahre, Preisname mit über 30 Zeichen, eine Phase ohne Preise, zwei Spezialpreise. `&extrem=leer` zeigt alles leer.
+
 ## Entwicklung
 
 ```powershell
@@ -49,7 +60,7 @@ python -m venv .venv
 .venv\Scripts\python -m pytest -q          # Tests
 ```
 
-- **Demo-Modus ohne Python:** nur mit dem URL-Parameter `?demo`: `ui/control.html?demo` bzw. `ui/beamer.html?demo&ansicht=statistik` im Browser öffnen (erfundene Beispieldaten; weitere Parameter für den Beamer: `&viele`, `&lang`, `&design=dunkel`; das Design lässt sich auch im Demo-Bedienfenster umschalten). Ohne `?demo` wartet die Seite auf die echte Anwendung.
+- **Demo-Modus ohne Python:** nur mit dem URL-Parameter `?demo`: `ui/control.html?demo` bzw. `ui/beamer.html?demo&ansicht=statistik` im Browser öffnen (erfundene Beispieldaten; weitere Parameter: `&viele`, `&lang`, `&design=dunkel` (Beamer), `&extrem` und `&extrem=leer` (Worst-Case-Daten, siehe „Gestaltung“); das Design lässt sich auch im Demo-Bedienfenster umschalten). Ohne `?demo` wartet die Seite auf die echte Anwendung.
 - **Icons:** Die Icons liegen als SVG in `ui/icons/`. Nach Änderungen `python tools/icons_bauen.py` ausführen; das erzeugt `ui/js/icons.js` (Inline-SVG, damit `currentColor` wirkt).
 - **Symbol:** `python tools/symbol_bauen.py` zeichnet das Symbol mit Pillow (je Größe eine passende Variante, ab 32 px drei Würfel, bei 16/20 px einer) und schreibt `assets/paschen.ico`, `assets/paschen.png`, `assets/paschen.svg` (Vorlage) sowie `ui/paschen-symbol.png` (Favicon der Oberflächen). Das Fenstersymbol wird beim Start über `webview.start(icon=...)` gesetzt.
 - **Programm bauen:** `.\build.ps1` führt die Tests aus und erzeugt mit PyInstaller `dist\Paschen.exe` (eine einzelne Datei, `ui/` und `assets/` eingebunden, Programmsymbol aus `assets\paschen.ico`). Einstieg ist `start_paschen.py`.
