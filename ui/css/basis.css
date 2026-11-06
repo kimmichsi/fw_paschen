@@ -1,0 +1,56 @@
+/* Gemeinsame Variablen und Grundstile fuer Bedien- und Beamer-Fenster */
+:root {
+  --bg: #0e1218;
+  --flaeche: #171c26;
+  --flaeche-2: #202736;
+  --flaeche-3: #2a3347;
+  --rand: #2d3649;
+  --text: #eef1f6;
+  --text-leise: #9ba6b9;
+  --akzent: #5aa9ff;
+  --akzent-dunkel: #1e4e86;
+  --akzent-text: #07121f;
+  --gold: #f5b942;
+  --gold-dunkel: #5a4210;
+  --gruen: #4cd08a;
+  --rot: #ff6b6b;
+  --radius: 14px;
+  --radius-klein: 9px;
+  --schatten: 0 8px 28px rgba(0, 0, 0, .35);
+  --schrift: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --schrift-titel: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, Arial, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--schrift);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+[hidden] { display: none !important; }
+
+/* Icons (Inline-SVG aus icons.js) */
+.icon { display: inline-flex; width: 1em; height: 1em; flex: none; }
+.icon svg { width: 100%; height: 100%; display: block; }
+
+.leise { color: var(--text-leise); }
+.gold { color: var(--gold); }
+.tabelle-zahl { font-variant-numeric: tabular-nums; }
+
+/* Tabellen (Statistik, in beiden Fenstern) */
+table.daten { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+table.daten th, table.daten td { padding: .45em .7em; text-align: right; white-space: nowrap; }
+table.daten th:first-child, table.daten td:first-child { text-align: left; }
+table.daten th { color: var(--text-leise); font-weight: 600; font-size: .85em; border-bottom: 1px solid var(--rand); }
+table.daten tbody tr:nth-child(odd) { background: rgba(255, 255, 255, .025); }
+table.daten td.name { text-align: left; white-space: normal; }
+table.daten td.null { color: var(--text-leise); }
+table.daten td.gesamt, table.daten th.gesamt { font-weight: 700; color: var(--akzent); }
+table.daten td.platz { text-align: left; color: var(--text-leise); width: 2.2em; }

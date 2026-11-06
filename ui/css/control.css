@@ -1,0 +1,184 @@
+/* Bedienfenster (Laptop 1366x768 bis 1920x1080) */
+html { font-size: clamp(14px, 1.05vw, 18px); }
+body { overflow: hidden; }
+
+#app { display: grid; grid-template-columns: 12.5rem 1fr; height: 100vh; }
+
+/* ---------------------------------------------------------------- Navigation */
+#nav { display: flex; flex-direction: column; gap: .35rem; padding: 1.1rem .8rem; background: var(--flaeche); border-right: 1px solid var(--rand); }
+.marke { font-family: var(--schrift-titel); font-weight: 700; font-size: 1.5rem; padding: .2rem .6rem 1rem; }
+.marke span { color: var(--akzent); margin-left: .4rem; font-size: 1.1rem; }
+.nav-knopf { text-align: left; border: 0; background: transparent; padding: .8rem .9rem; border-radius: var(--radius-klein); color: var(--text-leise); font-size: 1.05rem; font-weight: 600; }
+.nav-knopf:hover:not(:disabled) { background: var(--flaeche-2); color: var(--text); }
+.nav-knopf.aktiv { background: var(--akzent-dunkel); color: #fff; }
+.nav-knopf:disabled { opacity: .35; cursor: default; }
+.nav-fuss { margin-top: auto; display: grid; gap: .5rem; padding: .4rem; }
+.klein { font-size: .85rem; }
+.demo-hinweis { font-size: .8rem; color: var(--gold); border: 1px dashed var(--gold-dunkel); border-radius: var(--radius-klein); padding: .4rem .6rem; text-align: center; }
+
+.segment { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--bg); border: 1px solid var(--rand); border-radius: var(--radius-klein); padding: .2rem; gap: .2rem; }
+.segment button { border: 0; background: transparent; border-radius: 7px; padding: .5rem .3rem; color: var(--text-leise); font-weight: 600; }
+.segment button.aktiv { background: var(--akzent); color: var(--akzent-text); }
+.segment.gross button { padding: .75rem .3rem; font-size: 1.05rem; }
+
+/* ---------------------------------------------------------------- Inhalt */
+#inhalt { min-width: 0; min-height: 0; overflow: auto; padding: 1.4rem 1.6rem; }
+.ansicht h1 { margin: 0 0 1rem; font-family: var(--schrift-titel); font-size: 1.7rem; }
+.ansicht > .karte, .spalte > .karte { margin-bottom: 1rem; }
+
+.karte { background: var(--flaeche); border: 1px solid var(--rand); border-radius: var(--radius); padding: 1.1rem 1.2rem; }
+.karte h2, .spalten-kopf h2 { margin: 0 0 .8rem; font-size: .95rem; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--text-leise); }
+.kopfzeile { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .8rem; }
+.kopfzeile h2 { margin: 0; }
+.zwei-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.zwei-spalten.stat { grid-template-columns: 1.5fr 1fr; }
+.spalte { min-width: 0; }
+.scroll { overflow: auto; max-height: calc(100vh - 11rem); }
+
+/* Knoepfe und Felder */
+.knopf {
+  border: 1px solid var(--rand); background: var(--flaeche-2); color: var(--text);
+  padding: .7rem 1.1rem; border-radius: var(--radius-klein); font-weight: 600; font-size: 1rem;
+  transition: background .15s, border-color .15s;
+}
+.knopf:hover:not(:disabled) { background: var(--flaeche-3); }
+.knopf:disabled { opacity: .45; cursor: default; }
+.knopf.primaer { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); }
+.knopf.primaer:hover:not(:disabled) { background: #7bbcff; }
+.knopf.gefahr { color: var(--rot); border-color: rgba(255, 107, 107, .5); }
+.knopf.voll { width: 100%; margin-top: .6rem; }
+.knopf.klein { padding: .35rem .6rem; font-size: .9rem; }
+.knopf-reihe { display: grid; gap: .6rem; }
+
+input[type=text], input[type=search], input[type=number], select {
+  background: var(--bg); border: 1px solid var(--rand); border-radius: var(--radius-klein);
+  padding: .65rem .8rem; font-size: 1rem; min-width: 0;
+}
+input:focus, select:focus { outline: 2px solid var(--akzent); outline-offset: -1px; }
+.suche { width: 100%; margin-bottom: .8rem; }
+label.haken { display: flex; align-items: center; gap: .6rem; font-size: 1rem; }
+input[type=checkbox] { width: 1.2rem; height: 1.2rem; accent-color: var(--akzent); }
+form.inline { display: flex; gap: .6rem; margin-top: .8rem; }
+form.inline input { flex: 1; }
+.form-person { display: grid; gap: .6rem; }
+.zaehler { background: var(--flaeche-3); border-radius: 2rem; padding: .2rem .8rem; font-weight: 600; font-size: .95rem; }
+
+/* ---------------------------------------------------------------- Start */
+.jahr-kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .8rem; margin-bottom: 1rem; }
+.jahr-kachel { text-align: left; background: var(--flaeche-2); border: 2px solid var(--rand); border-radius: var(--radius); padding: .9rem 1rem; }
+.jahr-kachel:hover { border-color: var(--akzent); }
+.jahr-kachel.aktiv { border-color: var(--akzent); background: var(--akzent-dunkel); }
+.jahr-kachel b { display: block; font-size: 1.6rem; font-family: var(--schrift-titel); }
+.jahr-kachel span { color: var(--text-leise); font-size: .9rem; }
+.jahr-kachel.aktiv span { color: #cfe3ff; }
+.neues-spiel { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin: .6rem 0; }
+.neues-spiel input { width: 7rem; margin-left: .5rem; }
+
+/* ---------------------------------------------------------------- Listen (Vorbereitung) */
+.liste { display: grid; gap: .5rem; }
+.phasen-zeile { display: grid; grid-template-columns: 1fr auto auto auto auto; gap: .5rem; align-items: center; }
+.phasen-zeile input { width: 100%; }
+.phasen-zeile .rest { color: var(--text-leise); font-size: .9rem; white-space: nowrap; }
+.phasen-zeile .knopf { padding: .45rem .7rem; }
+.preis-gruppe { margin-bottom: 1rem; }
+.preis-gruppe h3 { margin: 0 0 .5rem; font-size: 1rem; color: var(--text-leise); font-weight: 600; }
+.preis-gruppe h3.sonder { color: var(--gold); }
+.preis-zeile { display: grid; grid-template-columns: auto 1fr auto auto; gap: .8rem; align-items: center; width: 100%; text-align: left; background: var(--flaeche-2); border: 1px solid var(--rand); border-radius: var(--radius-klein); padding: .6rem .9rem; margin-bottom: .45rem; }
+.preis-zeile:hover { border-color: var(--akzent); }
+.preis-zeile .icon { font-size: 1.7rem; color: var(--akzent); }
+.preis-zeile.spezial .icon { color: var(--gold); }
+.preis-zeile .menge { color: var(--text-leise); font-variant-numeric: tabular-nums; }
+.leer-text { color: var(--text-leise); padding: .4rem 0; }
+
+/* Namens-Kacheln */
+.namen { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .5rem; max-height: calc(100vh - 14rem); overflow: auto; align-content: start; padding: 2px; }
+.namen.gross { grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); gap: .6rem; max-height: none; overflow: visible; }
+.name-kachel {
+  position: relative; text-align: left; background: var(--flaeche-2); border: 2px solid var(--rand);
+  border-radius: var(--radius-klein); padding: .6rem .8rem; line-height: 1.25; min-height: 3.4rem;
+  display: flex; flex-direction: column; justify-content: center; font-weight: 600;
+}
+.name-kachel:hover { border-color: var(--akzent); }
+.name-kachel.gewaehlt { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.name-kachel.angemeldet { border-color: var(--gruen); background: rgba(76, 208, 138, .13); }
+.name-kachel .zusatz { font-size: .8rem; font-weight: 500; color: var(--text-leise); }
+.name-kachel.gewaehlt .zusatz { color: #123; }
+.name-kachel .badge { position: absolute; top: .3rem; right: .4rem; background: var(--bg); color: var(--akzent); border-radius: 1rem; padding: 0 .5rem; font-size: .8rem; font-weight: 700; }
+.name-kachel.gewaehlt .badge { background: var(--akzent-text); color: var(--akzent); }
+.name-kachel .haken-zeichen { position: absolute; top: .3rem; right: .5rem; color: var(--gruen); font-weight: 700; }
+
+/* ---------------------------------------------------------------- Spiel */
+.spiel-ansicht { display: grid; grid-template-columns: 1.15fr 1.1fr .85fr; gap: 1rem; height: 100%; min-height: 0; }
+.spiel-ansicht[hidden] { display: none; }
+.spiel-spalte { min-height: 0; overflow: auto; padding: 2px; }
+.spalten-kopf { display: flex; align-items: center; gap: 1rem; margin-bottom: .6rem; }
+.spalten-kopf h2 { margin: 0; white-space: nowrap; }
+.spalten-kopf .suche { margin: 0; }
+.spiel-spalte > .karte { margin-bottom: 1rem; }
+
+.preis-kacheln { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: .7rem; margin-bottom: 1rem; }
+.preis-kachel { display: grid; justify-items: start; gap: .3rem; text-align: left; background: var(--flaeche-2); border: 2px solid var(--rand); border-radius: var(--radius); padding: .9rem 1rem; min-height: 7.5rem; }
+.preis-kachel:hover:not(:disabled) { border-color: var(--akzent); background: var(--flaeche-3); }
+.preis-kachel .icon { font-size: 2.2rem; color: var(--akzent); }
+.preis-kachel .name { font-size: 1.1rem; font-weight: 650; line-height: 1.2; }
+.preis-kachel .rest { color: var(--text-leise); font-size: .95rem; font-variant-numeric: tabular-nums; }
+.preis-kachel .rest b { color: var(--text); font-size: 1.15rem; }
+.preis-kachel.bereit { border-color: var(--akzent); }
+.preis-kachel:disabled { opacity: .4; cursor: default; }
+.spezial-bereich { display: grid; gap: .6rem; }
+.spezial-knopf { display: flex; align-items: center; gap: .9rem; text-align: left; width: 100%; background: linear-gradient(135deg, rgba(245, 185, 66, .22), rgba(245, 185, 66, .07)); border: 2px solid var(--gold); border-radius: var(--radius); padding: .9rem 1.1rem; font-size: 1.1rem; font-weight: 650; color: var(--text); }
+.spezial-knopf .icon { font-size: 2rem; color: var(--gold); }
+.spezial-knopf small { display: block; color: var(--gold); font-weight: 600; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; }
+.spezial-knopf:hover { background: rgba(245, 185, 66, .3); }
+.sonder-banner { background: rgba(245, 185, 66, .14); border: 2px solid var(--gold); border-radius: var(--radius); padding: 1rem 1.2rem; margin-bottom: 1rem; }
+.sonder-banner .gross-text { font-size: 1.5rem; font-weight: 700; color: var(--gold); }
+.sonder-banner p { margin: .3rem 0 .8rem; }
+.ende-banner { background: rgba(76, 208, 138, .13); border: 2px solid var(--gruen); border-radius: var(--radius); padding: 1rem 1.2rem; font-size: 1.2rem; font-weight: 650; }
+
+.status .fortschritt { font-size: 1.15rem; font-weight: 650; margin-bottom: .8rem; }
+.status .letzter { background: var(--bg); border: 1px solid var(--rand); border-radius: var(--radius-klein); padding: .8rem 1rem; }
+.status .letzter .zeile { font-size: 1.1rem; font-weight: 600; line-height: 1.3; }
+.status .letzter .zeile.sonder { color: var(--gold); }
+.status .knopf { margin-top: .7rem; width: 100%; }
+.siege { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
+.siege li { display: grid; grid-template-columns: 2.4rem 1fr; gap: .4rem; font-size: .95rem; padding: .25rem 0; border-bottom: 1px solid rgba(255, 255, 255, .05); }
+.siege li .nr { color: var(--text-leise); font-variant-numeric: tabular-nums; }
+.siege li.sonder .was { color: var(--gold); }
+.siege .was { color: var(--text-leise); }
+
+/* Statistik / Rekorde (Bedienfenster) */
+.rekord p { margin: .1rem 0; }
+.rekord .rekord-gross { font-size: 1.8rem; font-weight: 700; color: var(--gold); }
+.rekord ol { margin: 0; padding-left: 1.4rem; line-height: 1.6; }
+.rekord ul { list-style: none; margin: .4rem 0 0; padding: 0; color: var(--text-leise); font-size: .9rem; }
+.rekord b { color: var(--akzent); font-weight: 650; }
+
+/* Excel */
+.xl-jahr { display: grid; grid-template-columns: auto 1fr; gap: .9rem; background: var(--flaeche-2); border: 1px solid var(--rand); border-radius: var(--radius-klein); padding: .8rem 1rem; margin: .6rem 0; }
+.xl-jahr h3 { margin: 0; font-size: 1.2rem; }
+.xl-jahr .details { color: var(--text-leise); font-size: .95rem; margin-top: .2rem; }
+.xl-jahr .warn { color: var(--gold); font-size: .9rem; margin-top: .3rem; }
+.xl-jahr .existiert { color: var(--rot); font-size: .9rem; margin-top: .3rem; font-weight: 600; }
+.xl-aktion { display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap; margin-top: .8rem; }
+#xl-vorschau { margin-top: 1rem; }
+
+/* ---------------------------------------------------------------- Dialog und Hinweis */
+.modal { position: fixed; inset: 0; z-index: 20; background: rgba(5, 8, 12, .7); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal-karte { background: var(--flaeche); border: 1px solid var(--rand); border-radius: var(--radius); box-shadow: var(--schatten); padding: 1.4rem 1.5rem; width: min(38rem, 100%); max-height: 92vh; overflow: auto; }
+.modal-karte h2 { margin: 0 0 1rem; font-size: 1.3rem; font-family: var(--schrift-titel); text-transform: none; letter-spacing: 0; color: var(--text); }
+.modal-aktionen { display: flex; gap: .6rem; justify-content: flex-end; margin-top: 1.2rem; }
+.modal-aktionen .links { margin-right: auto; }
+.feld { display: grid; gap: .3rem; margin-bottom: .9rem; }
+.feld > span { font-size: .9rem; color: var(--text-leise); font-weight: 600; }
+.feld-zeile { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+.icon-wahl { display: grid; grid-template-columns: repeat(8, 1fr); gap: .4rem; }
+.icon-wahl button { aspect-ratio: 1; display: grid; place-items: center; font-size: 1.8rem; background: var(--bg); border: 2px solid var(--rand); border-radius: var(--radius-klein); color: var(--text-leise); padding: 0; }
+.icon-wahl button.aktiv { border-color: var(--akzent); color: var(--akzent); background: var(--akzent-dunkel); }
+.menge-schnell { display: flex; gap: .4rem; margin-top: .4rem; }
+
+.toast { position: fixed; left: 50%; bottom: 1.4rem; transform: translateX(-50%); z-index: 30; max-width: 70vw; background: var(--flaeche-3); border: 1px solid var(--rand); border-left: .35rem solid var(--gruen); border-radius: var(--radius-klein); padding: .8rem 1.3rem; font-size: 1.05rem; font-weight: 600; box-shadow: var(--schatten); }
+.toast.fehler { border-left-color: var(--rot); }
+
+.toast .hinweis-zeile { margin-top: .3rem; color: var(--gold); }
+.toast .toast-knopf { margin-top: .6rem; }
+.xl-jahr .warn.live { color: var(--rot); font-weight: 700; }

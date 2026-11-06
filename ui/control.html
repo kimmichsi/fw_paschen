@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paschen – Spielleitung</title>
+<link rel="stylesheet" href="css/basis.css">
+<link rel="stylesheet" href="css/control.css">
+</head>
+<body>
+<div id="app">
+  <nav id="nav" aria-label="Bereiche">
+    <div class="marke">Paschen<span id="nav-jahr"></span></div>
+    <button class="nav-knopf" data-act="ansicht" data-ansicht="start">Start</button>
+    <button class="nav-knopf" data-act="ansicht" data-ansicht="vorbereitung">Vorbereitung</button>
+    <button class="nav-knopf" data-act="ansicht" data-ansicht="spiel">Spiel</button>
+    <button class="nav-knopf" data-act="ansicht" data-ansicht="statistik">Statistik</button>
+    <button class="nav-knopf" data-act="ansicht" data-ansicht="excel">Excel</button>
+    <div class="nav-fuss">
+      <div class="klein leise">Beamer zeigt</div>
+      <div class="segment" id="nav-beamer">
+        <button data-act="beamer-ansicht" data-wert="spiel">Spiel</button>
+        <button data-act="beamer-ansicht" data-wert="statistik">Statistik</button>
+      </div>
+      <div id="demo-hinweis" class="demo-hinweis" hidden>Demo-Modus<br>(erfundene Daten)</div>
+    </div>
+  </nav>
+
+  <main id="inhalt">
+    <!-- START -->
+    <section id="ansicht-start" class="ansicht" hidden>
+      <h1>Start</h1>
+      <div class="karte">
+        <h2>Datenordner</h2>
+        <p id="start-ordner-text" class="leise"></p>
+        <button class="knopf" data-act="ordner-waehlen" id="start-ordner-knopf">Ordner wählen …</button>
+      </div>
+      <div class="karte" id="start-spiele-karte">
+        <h2>Spiele</h2>
+        <div id="start-jahre" class="jahr-kacheln"></div>
+        <div class="neues-spiel">
+          <label>Neues Spiel für das Jahr <input type="number" id="neu-jahr" min="1900" max="2200"></label>
+          <button class="knopf primaer" data-act="neues-spiel">Neues Spiel anlegen</button>
+        </div>
+        <p class="klein leise">Phasen, Preise und Teilnehmer werden vom Vorjahr kopiert und können danach angepasst werden.</p>
+      </div>
+    </section>
+
+    <!-- VORBEREITUNG -->
+    <section id="ansicht-vorbereitung" class="ansicht" hidden>
+      <h1>Vorbereitung <span class="leise" id="vb-jahr"></span></h1>
+      <div class="zwei-spalten">
+        <div class="spalte">
+          <div class="karte">
+            <h2>Phasen</h2>
+            <div id="vb-phasen" class="liste"></div>
+            <form class="inline" id="form-phase">
+              <input type="text" id="phase-neu" placeholder="Neue Phase, z. B. „Phase 2“" autocomplete="off">
+              <button class="knopf" type="submit">Phase hinzufügen</button>
+            </form>
+          </div>
+          <div class="karte">
+            <div class="kopfzeile"><h2>Preise</h2><button class="knopf primaer" data-act="preis-neu">Preis hinzufügen</button></div>
+            <div id="vb-preise"></div>
+          </div>
+        </div>
+        <div class="spalte">
+          <div class="karte">
+            <div class="kopfzeile"><h2>Teilnehmer</h2><span class="zaehler" id="vb-zaehler"></span></div>
+            <input type="search" id="vb-suche" class="suche" placeholder="Name suchen …" autocomplete="off">
+            <div id="vb-personen" class="namen"></div>
+          </div>
+          <div class="karte">
+            <h2>Neue Person anlegen</h2>
+            <form id="form-person" class="form-person">
+              <input type="text" id="np-vorname" placeholder="Vorname" autocomplete="off">
+              <input type="text" id="np-nachname" placeholder="Nachname" autocomplete="off">
+              <label class="haken"><input type="checkbox" id="np-team"> Team („A / B“)</label>
+              <button class="knopf primaer" type="submit">Anlegen und anmelden</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SPIEL -->
+    <section id="ansicht-spiel" class="ansicht spiel-ansicht" hidden>
+      <div class="spiel-spalte">
+        <div class="spalten-kopf">
+          <h2 id="sp-titel-wer">1 · Wer hat gewonnen?</h2>
+          <input type="search" id="sp-suche" class="suche" placeholder="Suchen …" autocomplete="off">
+        </div>
+        <div id="sp-namen" class="namen gross"></div>
+      </div>
+      <div class="spiel-spalte">
+        <div class="spalten-kopf"><h2 id="sp-titel-preis">2 · Welcher Preis?</h2></div>
+        <div id="sp-sonder-banner" class="sonder-banner" hidden></div>
+        <div id="sp-phasenhinweis" class="klein leise"></div>
+        <div id="sp-preise" class="preis-kacheln"></div>
+        <div id="sp-spezial" class="spezial-bereich"></div>
+      </div>
+      <div class="spiel-spalte schmal">
+        <div id="sp-status" class="karte status"></div>
+        <div class="karte">
+          <h2>Beamer</h2>
+          <div class="segment gross" id="sp-beamer">
+            <button data-act="beamer-ansicht" data-wert="spiel">Spiel</button>
+            <button data-act="beamer-ansicht" data-wert="statistik">Statistik</button>
+          </div>
+          <button class="knopf voll" data-act="beamer-wechseln">Beamer auf anderen Bildschirm</button>
+          <button class="knopf voll" data-act="beamer-oeffnen">Beamer-Fenster öffnen</button>
+        </div>
+        <div class="karte">
+          <h2>Werkzeuge</h2>
+          <div class="knopf-reihe">
+            <button class="knopf" data-act="nachlegen">Preis nachlegen</button>
+            <button class="knopf" data-act="nachtragen">Teilnehmer nachtragen</button>
+          </div>
+        </div>
+        <div class="karte">
+          <h2>Letzte Siege</h2>
+          <ol id="sp-siege" class="siege"></ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATISTIK -->
+    <section id="ansicht-statistik" class="ansicht" hidden>
+      <h1>Statistik</h1>
+      <div class="zwei-spalten stat">
+        <div class="karte"><h2>Ewige Bestenliste</h2><div id="st-liste" class="scroll"></div></div>
+        <div class="spalte">
+          <div class="karte"><h2>Jahresvergleich</h2><div id="st-jahre"></div></div>
+          <div class="karte rekord"><h2>Meiste Siege an einem Abend</h2><div id="st-abend"></div></div>
+          <div class="karte rekord"><h2>Ewige Teilnahmen</h2><div id="st-teiln"></div></div>
+          <div class="karte rekord"><h2>Pechvogel</h2><div id="st-pech"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EXCEL -->
+    <section id="ansicht-excel" class="ansicht" hidden>
+      <h1>Excel</h1>
+      <div class="karte">
+        <h2>Import</h2>
+        <p class="leise">Liest eine Excel-Datei im bisherigen Format (Blätter „Paschen_JJJJ“) ein. Vor dem Übernehmen siehst du eine Vorschau.</p>
+        <button class="knopf primaer" data-act="excel-waehlen">Excel-Datei wählen …</button>
+        <div id="xl-vorschau"></div>
+      </div>
+      <div class="karte">
+        <h2>Export</h2>
+        <p class="leise">Speichert Übersicht und ein Blatt je Jahr. Die Datei lässt sich später wieder importieren.</p>
+        <button class="knopf" data-act="excel-export">Als Excel speichern …</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="modal" class="modal" hidden><div class="modal-karte" id="modal-karte"></div></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/icons.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/mock.js"></script>
+<script src="js/control.js"></script>
+</body>
+</html>

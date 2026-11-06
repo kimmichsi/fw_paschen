@@ -1,0 +1,27 @@
+# Datenschutz: Repo ist oeffentlich - keine Excel-/Spieldaten
+*.xlsx
+*.xls
+*.xlsm
+paschen-daten*.json
+backup/
+
+# Build
+dist/
+build/
+*.spec
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Lokal
+Github-Link.txt
+
+# lokale Claude-Konfiguration
+.claude/
+
+# Datenreste und Temporaeres
+paschen-daten*
+*.tmp

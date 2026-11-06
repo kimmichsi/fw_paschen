@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paschen – Beamer</title>
+<link rel="stylesheet" href="css/basis.css">
+<link rel="stylesheet" href="css/beamer.css">
+</head>
+<body>
+<div id="buehne">
+  <header class="kopf">
+    <div class="titel">Paschen <span id="jahr"></span></div>
+    <div class="fortschritt" id="fortschritt"></div>
+  </header>
+
+  <main id="ansicht-warten" class="ansicht zentriert" hidden>
+    <p class="gross leise">Warten auf die Spielleitung …</p>
+  </main>
+
+  <main id="ansicht-spiel" class="ansicht spiel" hidden>
+    <section class="links">
+      <div class="phasenkopf" id="phasenkopf"></div>
+      <div class="kacheln" id="kacheln"></div>
+      <div id="spezial" class="spezial-reihe"></div>
+      <div id="kommend" class="kommend"></div>
+    </section>
+    <aside class="rechts">
+      <div class="karte letzter" id="letzter"></div>
+      <div class="karte top10" id="top10"></div>
+    </aside>
+  </main>
+
+  <main id="ansicht-sonderrunde" class="ansicht zentriert sonder" hidden>
+    <p class="etikett">Sonderrunde</p>
+    <div class="sonder-icon" id="sonder-icon"></div>
+    <h1 id="sonder-name"></h1>
+    <p class="gross leise">Wer gewinnt?</p>
+  </main>
+
+  <main id="ansicht-ende" class="ansicht ende" hidden>
+    <h1 id="ende-titel"></h1>
+    <p class="ende-info leise" id="ende-info"></p>
+    <div class="ende-top" id="ende-top"></div>
+  </main>
+
+  <main id="ansicht-statistik" class="ansicht statistik" hidden>
+    <section class="karte liste">
+      <h2>Ewige Bestenliste</h2>
+      <div id="stat-liste"></div>
+    </section>
+    <section class="stat-rechts">
+      <div class="karte"><h2>Jahresvergleich</h2><div id="stat-jahre"></div></div>
+      <div class="karte rekord"><h2>Meiste Siege an einem Abend</h2><div id="rek-abend"></div></div>
+      <div class="rekord-zwei">
+        <div class="karte rekord"><h2>Ewige Teilnahmen</h2><div id="rek-teilnahmen"></div></div>
+        <div class="karte rekord"><h2>Pechvogel</h2><div id="rek-pech"></div></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="overlay" class="overlay" hidden><div class="overlay-karte" id="overlay-karte"></div></div>
+</div>
+
+<script src="js/icons.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/mock.js"></script>
+<script src="js/beamer.js"></script>
+</body>
+</html>
