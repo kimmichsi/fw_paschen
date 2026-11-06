@@ -10,7 +10,7 @@ if ($LASTEXITCODE -ne 0) { throw "Icons konnten nicht gebaut werden." }
 & $py -m pytest -q
 if ($LASTEXITCODE -ne 0) { throw "Tests fehlgeschlagen - Build abgebrochen." }
 
-& $py -m PyInstaller --noconfirm --clean --onefile --windowed --name Paschen --add-data "ui;ui" start_paschen.py
+& $py -m PyInstaller --noconfirm --clean --onefile --windowed --exclude-module PIL --name Paschen --icon assets\paschen.ico --add-data "ui;ui" --add-data "assets;assets" start_paschen.py
 if ($LASTEXITCODE -ne 0) { throw "PyInstaller fehlgeschlagen." }
 
 $exe = Join-Path $PSScriptRoot "dist\Paschen.exe"

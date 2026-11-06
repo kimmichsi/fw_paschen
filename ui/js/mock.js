@@ -9,7 +9,7 @@
   const VOR = "Fridolin Ottilie Kunigunde Balduin Hermine Eberhard Waltraud Leopold Gundula Theobald Rosalinde Adelbert Mechthild Wendelin Hildegunde Kasimir Brunhilde Ansgar Irmtraud Volkmar Gerlinde Radegund Isidor Walburga Humbert Thusnelda Lambert Sieglinde Quirin".split(" ");
   const NACH = "Musterfrau Beispiel Probe Testmann Demo Platzhalter Vorlage Exempel Schablone Attrappe Modell Stichprobe Fiktiv Erfunden Beleg Entwurf Skizze Dummy Zufall Rohling Prototyp Kopie Nachbau Probant Testfall Stellvertreter Mustermann Fallbeispiel Versuch Muster".split(" ");
 
-  const D = { ordner: "C:\\Demo\\Paschen-Daten", personen: [], spiele: [], jahr: 2025, ansicht: "spiel", sonderrunde: null, ereignis: null, ez: 0 };
+  const D = { ordner: "C:\\Demo\\Paschen-Daten", personen: [], spiele: [], jahr: 2025, ansicht: "spiel", design: (/[?&]design=dunkel(&|$)/.test(location.search) ? "dunkel" : "hell"), sonderrunde: null, ereignis: null, ez: 0 };
 
   function aufbauen() {
     for (let i = 0; i < 30; i++) {
@@ -120,6 +120,7 @@
       jahr: s ? s.jahr : null,
       jahre_info: D.spiele.slice().sort((a, b) => a.jahr - b.jahr).map((x) => ({ jahr: x.jahr, preise: x.preise.reduce((a, p) => a + p.menge, 0), teilnehmer: x.anwesende_ids.length, siege: x.siege.length, beendet: beendet(x) })),
       beamer_ansicht: D.ansicht,
+      beamer_design: D.design,
       sonderrunde: null,
       spiel: null,
       personen: [],
@@ -286,6 +287,7 @@
     sonderrunde_abbrechen: () => { D.sonderrunde = null; return fertig(); },
     sonderrunde_sieg: (pid) => { if (!D.sonderrunde) fehler("Es läuft keine Sonderrunde."); return eintragen(pid, D.sonderrunde, true); },
     beamer_ansicht_setzen: (a) => { D.ansicht = a; return fertig(); },
+    beamer_design_setzen: (d) => { if (d !== "hell" && d !== "dunkel") fehler("Unbekanntes Beamer-Design."); D.design = d; return fertig(); },
     beamer_bildschirm_wechseln: () => fehler("Demo-Modus: kein Beamer-Fenster."),
     beamer_oeffnen: () => fehler("Demo-Modus: kein Beamer-Fenster."),
     excel_vorschau_waehlen: () => ({

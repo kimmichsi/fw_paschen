@@ -120,6 +120,7 @@
     });
     $("nav-jahr").textContent = Z.jahr || "";
     document.querySelectorAll("[data-act=beamer-ansicht]").forEach((b) => b.classList.toggle("aktiv", b.dataset.wert === Z.beamer_ansicht));
+    document.querySelectorAll("[data-act=beamer-design]").forEach((b) => b.classList.toggle("aktiv", b.dataset.wert === Z.beamer_design));
     $("demo-hinweis").hidden = !demo;
   }
 
@@ -429,6 +430,7 @@
     nachlegen: nachlegenDialog,
     nachtragen: nachtragenDialog,
     "beamer-ansicht": (el) => call("beamer_ansicht_setzen", el.dataset.wert),
+    "beamer-design": (el) => call("beamer_design_setzen", el.dataset.wert),
     "beamer-wechseln": async () => { const r = await call("beamer_bildschirm_wechseln"); if (r) toast("Beamer verschoben."); },
     "beamer-oeffnen": async () => {
       const r = await call("beamer_oeffnen");

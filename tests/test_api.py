@@ -250,3 +250,40 @@ def test_beamer_oeffnen(api):
     assert z["beamer_neu"] is False and len(erzeugt) == 1
     api._beamer_geschlossen(erzeugt[0])
     assert ok(api.beamer_oeffnen())["beamer_neu"] is True
+
+
+def test_beamer_design(api, tmp_path):
+    aufbauen(api)
+    assert api.zustand()["beamer_design"] == "hell"  # Standard
+    assert ok(api.beamer_design_setzen("dunkel"))["beamer_design"] == "dunkel"
+    r = api.beamer_design_setzen("bunt")
+    assert "fehler" in r
+    assert api.zustand()["beamer_design"] == "dunkel"  # ungueltiger Wert aendert nichts
+    # dauerhaft: neue Api-Instanz mit gleicher Konfig liest den Wert, Datenordner bleibt erhalten
+    neu = Api(config_dir=tmp_path / "cfg")
+    assert neu.zustand()["beamer_design"] == "dunkel"
+    assert ok(neu.beamer_design_setzen("hell"))["beamer_design"] == "hell"
+    assert Api(config_dir=tmp_path / "cfg").zustand()["beamer_design"] == "hell"
+
+
+def test_beamer_design_geht_an_beamer(api):
+    class Fake:
+        def __init__(self):
+            self.js = []
+
+        def evaluate_js(self, code):
+            self.js.append(code)
+
+    f = Fake()
+    api._fenster_setzen(beamer=f)
+    ok(api.beamer_design_setzen("dunkel"))
+    assert f.js and '"beamer_design": "dunkel"' in f.js[-1]
+
+
+def test_datenordner_aendert_design_nicht(tmp_path):
+    a = Api(config_dir=tmp_path / "cfg")
+    ok(a.beamer_design_setzen("dunkel"))
+    ok(a.datenordner_setzen(str(tmp_path / "neu")))
+    b = Api(config_dir=tmp_path / "cfg")
+    z = b.zustand()
+    assert z["beamer_design"] == "dunkel" and z["datenordner"] == str(tmp_path / "neu")

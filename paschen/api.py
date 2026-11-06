@@ -27,6 +27,7 @@ from .models import Datenbestand, Spiel
 from .spiel import RegelFehler
 
 BEAMER_ANSICHTEN = ("spiel", "statistik")
+BEAMER_DESIGNS = store.BEAMER_DESIGNS  # ("hell", "dunkel")
 LETZTE_SIEGE = 12
 
 
@@ -67,6 +68,7 @@ class Api:
         jahre = [s.jahr for s in self._bestand.spiele]
         self._jahr: Optional[int] = max(jahre) if jahre else None
         self._beamer_ansicht = "spiel"
+        self._beamer_design = store.beamer_design_lesen(config_dir)
         self._sonderrunde: Optional[str] = None
         self._ereignis: Optional[dict] = None
         self._ereignis_zaehler = 0
@@ -168,6 +170,7 @@ class Api:
                 for x in sorted(b.spiele, key=lambda x: x.jahr)
             ],
             "beamer_ansicht": self._beamer_ansicht,
+            "beamer_design": self._beamer_design,
             "sonderrunde": None,
             "spiel": None,
             "personen": [],
@@ -486,6 +489,15 @@ class Api:
         if ansicht not in BEAMER_ANSICHTEN:
             raise RegelFehler("Unbekannte Beamer-Ansicht.")
         self._beamer_ansicht = ansicht
+        return self._fertig()
+
+    @_aktion
+    def beamer_design_setzen(self, design: str) -> dict:
+        """Beamer-Design ``hell`` oder ``dunkel``; wird dauerhaft in der Konfig gemerkt (Geraeteeinstellung)."""
+        if design not in BEAMER_DESIGNS:
+            raise RegelFehler("Unbekanntes Beamer-Design.")
+        store.beamer_design_setzen(design, self._config_dir)
+        self._beamer_design = design
         return self._fertig()
 
     @_aktion

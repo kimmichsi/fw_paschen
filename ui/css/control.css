@@ -182,3 +182,5 @@ form.inline input { flex: 1; }
 .toast .hinweis-zeile { margin-top: .3rem; color: var(--gold); }
 .toast .toast-knopf { margin-top: .6rem; }
 .xl-jahr .warn.live { color: var(--rot); font-weight: 700; }
+
+.segment-titel { margin: .8rem 0 .3rem; }

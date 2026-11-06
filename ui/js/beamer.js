@@ -55,6 +55,9 @@
 
   // ------------------------------------------------------------------ Zeichnen
   function zeichne(z) {
+    // Design: "hell" (Standard) oder "dunkel"
+    const design = z && z.beamer_design === "dunkel" ? "dunkel" : "hell";
+    if (document.body.dataset.design !== design) document.body.dataset.design = design;
     const ansicht = waehleAnsicht(z);
     zeigeAnsicht(ansicht);
     $("jahr").textContent = z && z.jahr ? z.jahr : "";
@@ -157,6 +160,7 @@
     if (!k) { overlayLaeuft = false; $("overlay").hidden = true; return; }
     overlayLaeuft = true;
     const karte = $("overlay-karte");
+    $("overlay").className = "overlay " + k.klasse;
     karte.className = "overlay-karte " + k.klasse;
     karte.innerHTML = k.html;
     // Animation neu starten

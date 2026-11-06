@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from paschen import spiel as sp
 from paschen import store
 from paschen.models import Datenbestand, Person
@@ -83,3 +85,17 @@ def test_konfig_datenordner(tmp_path, monkeypatch):
     store.datenordner_setzen("X:/irgendwo")
     assert (tmp_path / "envcfg" / "config.json").exists()
     assert store.datenordner_lesen() == "X:/irgendwo"
+
+
+def test_beamer_design_konfig(tmp_path):
+    cfg = tmp_path / "cfg"
+    assert store.beamer_design_lesen(cfg) == "hell"
+    store.beamer_design_setzen("dunkel", cfg)
+    assert store.beamer_design_lesen(cfg) == "dunkel"
+    store.datenordner_setzen(tmp_path / "daten", cfg)  # ueberschreibt das Design nicht
+    assert store.beamer_design_lesen(cfg) == "dunkel"
+    assert store.datenordner_lesen(cfg) == str(tmp_path / "daten")
+    with pytest.raises(ValueError):
+        store.beamer_design_setzen("bunt", cfg)
+    (cfg / "config.json").write_text("kaputt", encoding="utf-8")
+    assert store.beamer_design_lesen(cfg) == "hell"

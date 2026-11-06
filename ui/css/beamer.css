@@ -192,3 +192,158 @@ body { overflow: hidden; cursor: none; }
   .ende-top { grid-template-columns: 1fr; }
   .statistik { grid-template-columns: 1.3fr 1fr; }
 }
+
+/* ================================================================= Design "hell" (Standard)
+   Fuer lichtschwache Beamer bei eingeschaltetem Raumlicht: weisser Grund, fast schwarzer Text,
+   kein Grau unter #3A3A3A, dicke dunkle Raender, kraeftiges Feuerwehr-Rot, keine Transparenz
+   als Bedeutungstraeger. Das Design "dunkel" ist das Grundgeruest oben (Variablen aus basis.css). */
+:root { --icon-strich: 1.6; }
+.icon svg { stroke-width: var(--icon-strich); }
+
+body[data-design="hell"] {
+  --bg: #F6F6F4;
+  --flaeche: #FFFFFF;
+  --flaeche-2: #FFFFFF;
+  --flaeche-3: #CFCFCF;
+  --rand: #222222;
+  --text: #111111;
+  --text-leise: #2B2B2B;
+  --akzent: #C8102E;
+  --gold: #8E0B20;
+  --icon-strich: 2.5;
+  font-weight: 600;
+}
+body[data-design="hell"] #buehne { background: var(--bg); padding: 1.4rem 2.2rem 1.6rem; }
+
+/* Kopf */
+body[data-design="hell"] .kopf { border-bottom: .3rem solid var(--akzent); padding-bottom: .5rem; }
+body[data-design="hell"] .titel { font-weight: 800; font-size: 2.6rem; }
+body[data-design="hell"] .fortschritt { font-size: 1.75rem; font-weight: 700; }
+body[data-design="hell"] .fortschritt b { font-weight: 800; }
+
+/* Karten und Kacheln: weiss mit dicker dunkler Umrandung */
+body[data-design="hell"] .karte { border: .2rem solid #222; border-radius: .9rem; }
+body[data-design="hell"] .karte h2 { color: var(--text-leise); font-weight: 800; font-size: 1.2rem; }
+body[data-design="hell"] .phasenkopf h2 { color: var(--akzent); font-weight: 800; font-size: 2.2rem; }
+body[data-design="hell"] .phasenkopf span { color: var(--text-leise); font-weight: 700; font-size: 1.5rem; }
+
+body[data-design="hell"] .kachel { border: .2rem solid #222; border-radius: .9rem; }
+body[data-design="hell"] .viele .kachel { border-width: .16rem; border-radius: .7rem; }
+body[data-design="hell"] .kachel .ik { color: var(--akzent); font-size: 4.2rem; }
+body[data-design="hell"] .viele .kachel .ik { font-size: 2.5rem; }
+body[data-design="hell"] .kachel .name { font-weight: 800; font-size: 2.15rem; }
+body[data-design="hell"] .kachel .name.lang { font-size: 1.55rem; }
+body[data-design="hell"] .viele .kachel { padding: .45rem .6rem .5rem; }
+body[data-design="hell"] .viele .kachel .name { font-size: 1.25rem; }
+body[data-design="hell"] .viele .kachel .name.lang { font-size: 1.15rem; }
+body[data-design="hell"] .kachel .rest { color: var(--text-leise); font-weight: 700; font-size: 1.7rem; }
+body[data-design="hell"] .kachel .rest b { color: var(--text); font-weight: 800; font-size: 3.3rem; }
+body[data-design="hell"] .viele .kachel .rest { font-size: 1.1rem; }
+body[data-design="hell"] .viele .kachel .rest b { font-size: 2rem; }
+body[data-design="hell"] .kachel .balken { height: 1rem; background: var(--flaeche-3); border-radius: .5rem; margin-top: .55rem; }
+body[data-design="hell"] .viele .kachel .balken { height: .8rem; margin-top: .3rem; }
+body[data-design="hell"] .kachel .balken i { background: var(--akzent); border-radius: .5rem; }
+/* Wenig uebrig: roter Rahmen und rote Zahl (die Zahl bleibt gross sichtbar) */
+body[data-design="hell"] .kachel.wenig { border-color: var(--akzent); }
+body[data-design="hell"] .kachel.wenig .rest b { color: var(--akzent); }
+/* Vergeben: nicht ausgeblendet, sondern durchgestrichen, schraffiert, gestrichelter Rand */
+body[data-design="hell"] .kachel.leer {
+  opacity: 1;
+  border-style: dashed;
+  background: repeating-linear-gradient(135deg, #ECECEA 0 .6rem, #DCDCD8 .6rem 1.2rem);
+}
+body[data-design="hell"] .kachel.leer .name { text-decoration-thickness: .2rem; text-decoration-color: #111; color: #222; }
+body[data-design="hell"] .kachel.leer .ik { color: #555; }
+body[data-design="hell"] .kachel.leer .rest { color: #111; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+body[data-design="hell"] .kachel.leer .balken i { background: #555; }
+
+/* Spezialpreis: kraeftige rote Flaeche, weisse Schrift */
+body[data-design="hell"] .spezial { background: var(--akzent); border: .2rem solid #111; box-shadow: none; color: #fff; }
+body[data-design="hell"] .spezial .icon { color: #fff; font-size: 3.3rem; }
+body[data-design="hell"] .spezial .name { color: #fff; font-weight: 800; font-size: 1.9rem; }
+body[data-design="hell"] .spezial .hinweis { color: #fff; font-weight: 800; font-size: 1.2rem; }
+
+body[data-design="hell"] .kommend { color: var(--text-leise); font-weight: 700; font-size: 1.25rem; }
+body[data-design="hell"] .kommend .chip { border: .15rem dashed #222; }
+body[data-design="hell"] .kommend .chip b { color: var(--text); font-weight: 800; }
+
+/* Letzter Gewinner: roter Rahmen */
+body[data-design="hell"] .karte.letzter { border-color: var(--akzent); border-width: .3rem; }
+body[data-design="hell"] .letzter .etikett, body[data-design="hell"] .etikett { color: var(--text-leise); font-weight: 800; font-size: 1.2rem; }
+body[data-design="hell"] .letzter .wer { font-weight: 800; }
+body[data-design="hell"] .letzter .was { color: var(--akzent); font-weight: 800; font-size: 1.9rem; }
+body[data-design="hell"] .letzter .was.sonder { color: var(--akzent); }
+body[data-design="hell"] .letzter .runde { color: var(--text-leise); font-weight: 700; }
+body[data-design="hell"] .letzter .keiner { color: var(--text-leise); font-weight: 700; }
+
+/* Top 10: Platz 1 rot */
+body[data-design="hell"] .top10 li { border-bottom: .12rem solid #8A8A8A; font-size: 1.4rem; line-height: 1.2; padding: .24rem 0; font-weight: 700; }
+body[data-design="hell"] .top10 li .anz { font-weight: 800; color: var(--text); }
+body[data-design="hell"] .top10 li:nth-child(-n+3) .name { font-weight: 800; }
+body[data-design="hell"] .top10 li:first-child, body[data-design="hell"] .top10 li:first-child .anz { color: var(--akzent); font-weight: 800; }
+body[data-design="hell"] .top10 .leer { color: var(--text-leise); font-weight: 700; }
+
+/* Sonderrunde: satte rote Flaeche, weisse Schrift */
+body[data-design="hell"] .sonder { background: var(--akzent); color: #fff; border: .3rem solid #111; border-radius: 1.4rem; }
+body[data-design="hell"] .sonder .etikett { color: #fff; font-weight: 800; font-size: 2.4rem; }
+body[data-design="hell"] .sonder-icon .icon { color: #fff; filter: none; animation: none; font-size: 15rem; --icon-strich: 2; }
+body[data-design="hell"] .sonder h1 { color: #fff; font-weight: 800; font-size: 7rem; }
+body[data-design="hell"] .sonder .gross { color: #fff; font-weight: 700; font-size: 2.6rem; }
+
+/* Ende */
+body[data-design="hell"] .ende h1 { font-weight: 800; color: var(--akzent); font-size: 5rem; }
+body[data-design="hell"] .ende-info { color: var(--text-leise); font-weight: 700; font-size: 1.8rem; }
+body[data-design="hell"] .ende-top { width: min(92rem, 100%); }
+body[data-design="hell"] .ende-top .zeile { grid-template-columns: 3.6rem 1fr auto; }
+body[data-design="hell"] .top10 li { grid-template-columns: 2.7rem 1fr auto; }
+body[data-design="hell"] .ende-top .zeile { border-bottom: .15rem solid #222; font-size: 2.6rem; padding: .65rem 0; font-weight: 700; }
+body[data-design="hell"] .ende-top .platz { color: var(--text-leise); }
+body[data-design="hell"] .ende-top .anz { color: var(--text); font-weight: 800; }
+body[data-design="hell"] .ende-top .zeile.erster, body[data-design="hell"] .ende-top .zeile.erster .name,
+body[data-design="hell"] .ende-top .zeile.erster .anz, body[data-design="hell"] .ende-top .zeile.erster .platz { color: var(--akzent); font-weight: 800; }
+
+/* Statistik */
+body[data-design="hell"] table.daten th { color: var(--text-leise); font-weight: 800; border-bottom: .2rem solid #222; }
+body[data-design="hell"] table.daten td { font-weight: 700; }
+body[data-design="hell"] table.daten tbody tr:nth-child(odd) { background: #ECECEA; }
+body[data-design="hell"] table.daten td.null { color: var(--text-leise); }
+body[data-design="hell"] table.daten td.gesamt, body[data-design="hell"] table.daten th.gesamt { color: var(--akzent); font-weight: 800; }
+body[data-design="hell"] table.daten .leise { color: var(--text-leise); font-weight: 700; }
+body[data-design="hell"] .statistik table.daten { font-size: 1.4rem; }
+body[data-design="hell"] .stat-rechts table.daten { font-size: 1.35rem; }
+body[data-design="hell"] .stat-rechts table.daten th, body[data-design="hell"] .stat-rechts table.daten td { padding: .25rem .6rem; }
+body[data-design="hell"] .stat-rechts { gap: .8rem; }
+body[data-design="hell"] .stat-rechts .karte { padding: .7rem 1.2rem .8rem; }
+body[data-design="hell"] .stat-rechts .karte h2 { margin-bottom: .35rem; }
+body[data-design="hell"] .stat-rechts table.daten th, body[data-design="hell"] .stat-rechts table.daten td { padding: .15rem .6rem; }
+body[data-design="hell"] .rekord .rekord-gross { font-size: 2.2rem; line-height: 1.1; }
+body[data-design="hell"] .rekord ol { font-size: 1.25rem; line-height: 1.35; padding-left: 1.3rem; }
+body[data-design="hell"] .rekord p { font-size: 1.2rem; }
+body[data-design="hell"] .rekord ul { font-size: 1.15rem; }
+body[data-design="hell"] .rekord .rekord-gross { color: var(--akzent); font-weight: 800; }
+body[data-design="hell"] .rekord ul { color: var(--text-leise); font-weight: 700; }
+body[data-design="hell"] .rekord b { color: var(--akzent); font-weight: 800; }
+body[data-design="hell"] .rekord p, body[data-design="hell"] .rekord ol { font-weight: 700; }
+
+/* Overlays: volle Flaeche ohne Transparenz und Unschaerfe. Sieg = rot/weiss, Phasenwechsel = weiss/schwarz */
+body[data-design="hell"] .overlay { background: var(--akzent); backdrop-filter: none; }
+body[data-design="hell"] .overlay.wechsel { background: #FFFFFF; }
+body[data-design="hell"] .overlay-karte { background: transparent; border: 0; box-shadow: none; color: #fff; padding: 2rem 4rem; }
+body[data-design="hell"] .overlay-karte .klein { color: #fff; font-weight: 800; font-size: 2.2rem; }
+body[data-design="hell"] .overlay-karte .wer { font-weight: 800; font-size: 8rem; }
+body[data-design="hell"] .overlay-karte .was { color: #fff; font-weight: 800; font-size: 4.2rem; }
+body[data-design="hell"] .overlay-karte .was.sonder { color: #fff; }
+body[data-design="hell"] .overlay-karte .was .icon { font-size: 6rem; --icon-strich: 2.2; }
+body[data-design="hell"] .overlay-karte.wechsel { color: #111; }
+body[data-design="hell"] .overlay-karte.wechsel .klein { color: var(--text-leise); }
+body[data-design="hell"] .overlay-karte.wechsel .wer { color: #111; font-size: 6.2rem; }
+body[data-design="hell"] .overlay-karte.wechsel .weiter { color: var(--akzent); font-weight: 800; font-size: 3.8rem; }
+body[data-design="hell"] .overlay-karte.wechsel .weiter b { font-weight: 800; }
+
+@media (max-aspect-ratio: 3/2) {
+  body[data-design="hell"] .letzter .wer { font-size: 2.5rem; }
+  body[data-design="hell"] .overlay-karte .wer { font-size: 6rem; }
+  body[data-design="hell"] .overlay-karte.wechsel .wer { font-size: 5rem; }
+  body[data-design="hell"] .sonder h1 { font-size: 5.4rem; }
+  body[data-design="hell"] .ende-top .zeile { font-size: 2.1rem; }
+}

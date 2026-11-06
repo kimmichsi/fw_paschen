@@ -14,6 +14,8 @@ Die Spielleitung bedient alles am Laptop, das Publikum sieht den aktuellen Stand
 - **Spielende:** Sind alle Preise vergeben, zeigt der Beamer das Ende mit den Top 10 des Abends.
 - **Statistik:** Eigene Statistikansicht für Laptop und Beamer.
 - **Beamer-Ansicht:** Im Bedienfenster lässt sich der Beamer zwischen „Spiel“ und „Statistik“ umschalten.
+- **Beamer-Design:** Im Bereich „Beamer“ (Ansicht „Spiel“) wählt man **Hell** (Standard) oder **Dunkel**. „Hell“ ist für lichtschwache Beamer bei eingeschaltetem Raumlicht gedacht: weißer Grund, schwarze Schrift in kräftigen Gewichten, dicke Umrandungen, Feuerwehr-Rot als Akzent, vergebene Preise durchgestrichen und schraffiert statt ausgeblendet. Die Wahl ist eine Geräteeinstellung und wird in der `config.json` gemerkt (nicht in den Spieldaten).
+- **Programmsymbol:** Drei rote Würfel mit gleicher Augenzahl (ein „Pasch“) als Fenster-, Taskleisten- und Programmsymbol.
 - **Beamer-Fenster:** „Beamer auf anderen Bildschirm“ verschiebt das Fenster; „Beamer-Fenster öffnen“ erzeugt es neu, falls es versehentlich geschlossen wurde (es erhält sofort den aktuellen Stand).
 - **Excel-Import und -Export:** Alte Jahre werden aus einer Excel-Datei übernommen, der Spielstand lässt sich nach Excel exportieren.
 - **Datensicherung:** Jeder Speichervorgang legt vorher ein Backup an (die letzten 20 bleiben erhalten).
@@ -47,7 +49,8 @@ python -m venv .venv
 .venv\Scripts\python -m pytest -q          # Tests
 ```
 
-- **Demo-Modus ohne Python:** nur mit dem URL-Parameter `?demo`: `ui/control.html?demo` bzw. `ui/beamer.html?demo&ansicht=statistik` im Browser öffnen (erfundene Beispieldaten; weitere Parameter für den Beamer: `&viele`, `&lang`). Ohne `?demo` wartet die Seite auf die echte Anwendung.
+- **Demo-Modus ohne Python:** nur mit dem URL-Parameter `?demo`: `ui/control.html?demo` bzw. `ui/beamer.html?demo&ansicht=statistik` im Browser öffnen (erfundene Beispieldaten; weitere Parameter für den Beamer: `&viele`, `&lang`, `&design=dunkel`; das Design lässt sich auch im Demo-Bedienfenster umschalten). Ohne `?demo` wartet die Seite auf die echte Anwendung.
 - **Icons:** Die Icons liegen als SVG in `ui/icons/`. Nach Änderungen `python tools/icons_bauen.py` ausführen; das erzeugt `ui/js/icons.js` (Inline-SVG, damit `currentColor` wirkt).
-- **Programm bauen:** `.\build.ps1` führt die Tests aus und erzeugt mit PyInstaller `dist\Paschen.exe` (eine einzelne Datei, `ui/` eingebunden). Einstieg ist `start_paschen.py`.
+- **Symbol:** `python tools/symbol_bauen.py` zeichnet das Symbol mit Pillow (je Größe eine passende Variante, ab 32 px drei Würfel, bei 16/20 px einer) und schreibt `assets/paschen.ico`, `assets/paschen.png`, `assets/paschen.svg` (Vorlage) sowie `ui/paschen-symbol.png` (Favicon der Oberflächen). Das Fenstersymbol wird beim Start über `webview.start(icon=...)` gesetzt.
+- **Programm bauen:** `.\build.ps1` führt die Tests aus und erzeugt mit PyInstaller `dist\Paschen.exe` (eine einzelne Datei, `ui/` und `assets/` eingebunden, Programmsymbol aus `assets\paschen.ico`). Einstieg ist `start_paschen.py`.
 - **Git-Hooks:** Einmalig `git config core.hooksPath .githooks` setzen.
