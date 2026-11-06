@@ -8,7 +8,7 @@
 - Icons: `ui/icons/*.svg` → `tools/icons_bauen.py` → `ui/js/icons.js`
 - Beamer-Designs: „hell“ (Standard, für lichtschwache Beamer bei Raumlicht) und „dunkel“; Umschalter im Bedienfenster, gespeichert in `config.json` (`beamer_design`), umgesetzt über `body[data-design]` in `ui/css/beamer.css`
 - Symbol: Würfel-Pasch in Feuerwehr-Rot, erzeugt von `tools/symbol_bauen.py` (Pillow) → `assets/paschen.ico|png|svg`; Fenstersymbol per `webview.start(icon=...)`, exe-Symbol per `build.ps1`
-- Stand: 2026-11-06, fertig gebaut (inkl. Designs hell/dunkel und Symbol); nicht auf echter Zweibildschirm-Hardware getestet; noch nicht nach GitHub gepusht
+- Stand: 2026-11-06, fertig gebaut (inkl. Designs hell/dunkel und Symbol); nicht auf echter Zweibildschirm-Hardware getestet; auf GitHub (kimmichsi/fw_paschen, main)
 
 ## Feste Regeln (aus Prüfung gelernt)
 - Repo ist öffentlich: keine echten Namen, Excel-Dateien oder Spieldaten. `.gitignore` und `.githooks/pre-commit` (über `core.hooksPath`) sperren `*.xlsx`, `paschen-daten*`, `backup/`, `*.tmp`. Vor dem Push Namens-Scan gegen die lokale Excel durchführen, nur Trefferzahlen ausgeben.
@@ -19,5 +19,5 @@
 - Headless-Edge-Screenshots nur mit `--headless=new`.
 - Neue Beamer-Darstellungen immer in beiden Designs prüfen; für „hell“ zusätzlich mit simuliertem Streulicht (Bild = 0.45·Bild + 0.55·#BDBDBD): Sekundärtext nie heller als #3A3A3A, nichts über Deckkraft ausblenden.
 - Excel-Import: Spezialpreise entstehen nicht automatisch (z. B. Gin). Nach dem Import in der Vorbereitung markieren.
-- Stand: 2026-11-06
 - Pillow nur als Werkzeug-Abhängigkeit (tools/symbol_bauen.py); im Build mit `--exclude-module PIL` ausschließen, sonst wird die exe ca. 6 MB größer.
+- Stand: 2026-11-06
