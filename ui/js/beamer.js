@@ -1,12 +1,14 @@
 // Beamer-Fenster: bekommt den Zustand per window.render(z) von Python (oder aus mock.js im Demo-Modus).
 (function () {
   const $ = (id) => document.getElementById(id);
-  const ANSICHTEN = ["warten", "spiel", "sonderrunde", "ende", "statistik"];
+  const ANSICHTEN = ["warten", "spiel", "sonderrunde", "ende", "statistik", "regeln"];
   let aktuelleAnsicht = null;
   let letzteEreignisId = 0;
   let overlayWarteschlange = [];
   let overlayLaeuft = false;
   let overlayAusTimer = null;
+  let bilderVersion = 0;   // zaehlt hoch, wenn neue Bilder gesetzt wurden (Kachel-Cache)
+  let letztesZ = null;
   const weniger = () => !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
   // Gestaffelter Ansichtswechsel: jede Ansicht bekommt ihre Elemente als .stufe mit Index --i (CSS: 40 ms Abstand)
@@ -27,9 +29,8 @@
     if (!el || !el.animate) return;
     const von = weniger() ? { opacity: 0 } : { opacity: 0, transform: "translateY(.35rem)" };
     // Dauer und Kurve aus den Variablen in basis.css (--dauer-tick, --ease-out)
-    const cs = getComputedStyle(document.documentElement);
-    const dauer = parseFloat(cs.getPropertyValue("--dauer-tick")) || 280;
-    const kurve = cs.getPropertyValue("--ease-out").trim() || "ease-out";
+    const dauer = dauerMs("--dauer-tick", 220);
+    const kurve = getComputedStyle(document.documentElement).getPropertyValue("--ease-out").trim() || "ease-out";
     // Hinweis: Laeuft gerade ein Overlay, ist der Tick dahinter unsichtbar. Das ist gewollt: Das Overlay ist der Moment, die Zahl ist danach schon ruhig.
     el.animate([von, { opacity: 1, transform: "none" }], { duration: dauer, easing: kurve });
   }
@@ -40,13 +41,17 @@
 
   function zeigeAnsicht(name) {
     if (name === aktuelleAnsicht) return;
+    if (aktuelleAnsicht === "regeln") rgStop();
     ANSICHTEN.forEach((n) => { $("ansicht-" + n).hidden = n !== name; });
     aktuelleAnsicht = name;
   }
 
+  // Eine laufende Sonderrunde hat Vorrang vor Regeln und Statistik
   function waehleAnsicht(z) {
-    if (!z || !z.spiel) return "warten";
-    if (z.sonderrunde) return "sonderrunde";
+    if (!z) return "warten";
+    if (z.spiel && z.sonderrunde) return "sonderrunde";
+    if (z.beamer_ansicht === "regeln") return "regeln";
+    if (!z.spiel) return "warten";
     if (z.beamer_ansicht === "statistik") return "statistik";
     if (z.spiel.beendet) return "ende";
     return "spiel";
@@ -68,13 +73,20 @@
         box.appendChild(el);
       }
       if (box.children[i] !== el) box.insertBefore(el, box.children[i] || null);
-      const iconHtml = icon(p.icon);
-      if (el._icon !== iconHtml) { el.querySelector(".ik").innerHTML = iconHtml; el._icon = iconHtml; }
+      const ikKey = (p.bild || "") + "|" + bilderVersion + "|" + p.icon;
+      if (el._icon !== ikKey) {
+        const ik = el.querySelector(".ik");
+        ik.innerHTML = bildIcon(p.bild, p.icon);
+        ik.classList.toggle("mit-bild", !!(p.bild && BILDER[p.bild]));
+        el._icon = ikKey;
+      }
       const nm = el.querySelector(".name");
       nm.textContent = p.name;
-      nm.classList.toggle("lang", p.name.length > 14);
-      nm.classList.toggle("sehr-lang", p.name.length > 22);
-      const restHtml = p.rest > 0 ? "<b>" + zahl(p.rest) + "</b> von " + zahl(p.menge) : "vergeben";
+      // Groesse nach Laenge des Namens und des laengsten Wortes (ein langes Wort darf nie mitten im Wort brechen)
+      const wort = Math.max(...p.name.split(/\s+/).map((w) => w.length));
+      nm.classList.toggle("lang", p.name.length > 14 || wort > 9);
+      nm.classList.toggle("sehr-lang", p.name.length > 22 || wort > 12);
+      const restHtml = p.rest > 0 ? "<b>" + zahl(p.rest) + "</b> von " + zahl(p.menge) : "Vergeben";
       if (el._rest !== restHtml) {
         const war = el._rest !== undefined;
         const re = el.querySelector(".rest");
@@ -96,6 +108,8 @@
     const ansicht = waehleAnsicht(z);
     zeigeAnsicht(ansicht);
     $("jahr").textContent = z && z.jahr ? z.jahr : "";
+    demoBand(z);
+    if (ansicht === "regeln") { setze($("fortschritt"), ""); zeichneRegeln(z); return; }
     if (ansicht === "warten") { setze($("fortschritt"), ""); return; }
     const s = z.spiel;
 
@@ -110,7 +124,7 @@
 
     if (ansicht === "spiel") zeichneSpiel(z);
     else if (ansicht === "sonderrunde") {
-      setze($("sonder-icon"), icon(z.sonderrunde.icon));
+      setze($("sonder-icon"), bildIcon(z.sonderrunde.bild, z.sonderrunde.icon));
       $("sonder-name").textContent = z.sonderrunde.name;
       $("sonder-name").className = laenge(z.sonderrunde.name).trim();
     } else if (ansicht === "ende") zeichneEnde(z);
@@ -122,7 +136,7 @@
     const aktiv = s.phasen.find((p) => p.aktiv);
     // Kopf der aktiven Phase
     if (aktiv) {
-      setze($("phasenkopf"), "<h2" + (aktiv.name.length > 34 ? " class='lang'" : "") + ">" + esc(aktiv.name) + "</h2><span>Phase " + s.phase_nr + " von " + s.phasen_anzahl + "</span>");
+      setze($("phasenkopf"), "<span class='aug' aria-hidden='true'></span><h2" + (aktiv.name.length > 34 ? " class='lang'" : "") + ">" + esc(aktiv.name) + "</h2><span>Phase " + s.phase_nr + " von " + s.phasen_anzahl + "</span>");
       const preise = s.preise.filter((p) => p.phase_id === aktiv.id && !p.spezial);
       kachelnAktualisieren(preise);
     } else {
@@ -140,7 +154,7 @@
     }
     // Spezialpreise
     setze($("spezial"), s.spezialpreise_offen.map((p) =>
-      '<div class="spezial">' + icon(p.icon) + "<div><div class='hinweis'>Sonderrunde folgt</div><div class='name'>" + esc(p.name) +
+      '<div class="spezial">' + bildIcon(p.bild, p.icon) + "<div><div class='hinweis'>Sonderrunde folgt</div><div class='name'>" + esc(p.name) +
       (p.rest > 1 ? " ×" + p.rest : "") + "</div></div></div>").join(""));
     // Kommende Phasen
     const kommend = s.phasen.filter((p) => !p.aktiv && !p.abgeschlossen && p.gesamt > 0 && (!aktiv || p.reihenfolge > aktiv.reihenfolge));
@@ -152,11 +166,11 @@
     // Letzter Gewinner
     const l = s.letzter_sieg;
     setze($("letzter"), "<p class='etikett'>Letzter Gewinner</p>" + (l
-      ? kurzHtml(l.name, "wer drei" + (l.name.length > 24 ? " lang" : "")) + "<div class='was" + (l.sonderrunde ? " sonder" : "") + "'>" + icon(l.icon) + "<span>" + esc(l.preis_name) + "</span></div><div class='runde'>Runde " + zahl(l.nr) + "</div>"
+      ? kurzHtml(l.name, "wer drei" + (l.name.length > 24 ? " lang" : "")) + "<div class='was" + (l.sonderrunde ? " sonder" : "") + "'>" + bildIcon(l.bild, l.icon) + "<span>" + esc(l.preis_name) + "</span></div><div class='runde'>Runde " + zahl(l.nr) + "</div>"
       : "<div class='keiner'>Noch kein Gewinner</div>"));
 
     // Top 10
-    setze($("top10"), "<h2>Top 10 des Abends</h2>" + (s.top10.length
+    setze($("top10"), "<h2>Top 10 des Nachmittags</h2>" + (s.top10.length
       ? "<ol>" + s.top10.map((t, i) => "<li><span class='platz'>" + (i + 1) + ".</span>" + kurzHtml(t.name, "name eine") + "<span class='anz'>" + zahl(t.siege) + "</span></li>").join("") + "</ol>"
       : "<div class='leer'>Noch keine Siege.</div>"));
   }
@@ -179,7 +193,7 @@
     setze($("stat-liste"), bestenlisteHtml(st, 15));
     setze($("stat-jahre"), jahresvergleichHtml(st));
     const r = rekordeHtml(st);
-    setze($("rek-abend"), r.abend);
+    setze($("rek-nachmittag"), r.nachmittag);
     setze($("rek-teilnahmen"), r.teilnahmen);
     setze($("rek-pech"), r.pechvogel);
   }
@@ -189,8 +203,9 @@
   const laenge = (t) => (t.length > 40 ? " sehr-lang" : t.length > 22 ? " lang" : "");
   function overlayKarte(e) {
     if (e.typ === "sieg") {
-      return { html: "<div class='klein'>Runde " + zahl(e.nr) + "</div><div class='wer" + laenge(e.name) + "'>" + esc(e.name) + "</div><div class='was" + (e.sonderrunde ? " sonder" : "") + (e.preis_name.length > 28 ? " lang" : "") + "'>" +
-        icon(e.icon) + "<span>" + (e.sonderrunde ? "gewinnt " : "wählt ") + esc(e.preis_name) + "</span></div>", ms: 4000, klasse: "" };
+      // Drei Einsen schlagen alles: drei rote Wuerfel als Moment des Siegs
+      return { html: wuerfelReihe([1, 1, 1]) + "<div class='klein'>" + (e.nr ? "Runde " + zahl(e.nr) : "Sieg") + "</div><div class='wer" + laenge(e.name) + "'>" + esc(e.name) + "</div><div class='was" + (e.sonderrunde ? " sonder" : "") + (e.preis_name.length > 28 ? " lang" : "") + "'>" +
+        bildIcon(e.bild, e.icon) + "<span>" + (e.sonderrunde ? "gewinnt " : "wählt ") + esc(e.preis_name) + "</span></div>", ms: 4000, klasse: "" };
     }
     if (e.typ === "phasenwechsel") {
       const weiter = e.nach_name ? "weiter mit <b>" + esc(e.nach_name) + "</b>" : "Sonderrunde folgt";
@@ -213,7 +228,7 @@
     if (!k) {
       overlayLaeuft = false;
       ov.classList.remove("an");
-      overlayAusTimer = setTimeout(() => { if (!overlayLaeuft) ov.hidden = true; }, 220);
+      overlayAusTimer = setTimeout(() => { if (!overlayLaeuft) ov.hidden = true; }, dauerMs("--dauer-overlay-aus", 140) + 40);
       return;
     }
     overlayLaeuft = true;
@@ -240,8 +255,77 @@
     if (!overlayLaeuft) naechstesOverlay();
   }
 
+  // ------------------------------------------------------------------ DEMO-Band
+  function demoBand(z) {
+    const an = !!(z && z.demo && z.demo.aktiv);
+    const b = $("demo-band");
+    document.body.classList.toggle("ist-demo", an);
+    b.hidden = !an;
+    if (an) setze(b, "<b>Demo</b><span>Testdaten (" + (z.demo.art === "kopie" ? "Kopie" : "erfunden") + "), keine echten Spieldaten</span>");
+  }
+
+  // ------------------------------------------------------------------ Regel-Show
+  // Der Beamer steuert den Folien-Timer selbst. Neues regel_nonce = auf regel_index springen und Timer neu starten.
+  const rg = { nonce: undefined, index: 0, sig: null, timer: null, intervall: 12, n: 0, nPlan: -1, aktiv: false, liste: [] };
+  function rgStop() { clearTimeout(rg.timer); rg.timer = null; rg.aktiv = false; rg.nPlan = -1; }
+  function rgPlane() {
+    clearTimeout(rg.timer); rg.timer = null; rg.nPlan = rg.n;
+    if (rg.n > 1) rg.timer = setTimeout(() => { rg.index = (rg.index + 1) % rg.n; rgZeige(); rgPlane(); }, rg.intervall * 1000);
+  }
+  function rgPunkte() {
+    setze($("regel-punkte"), rg.n > 1 ? rg.liste.map((_, i) => '<span class="punkt' + (i === rg.index ? " an" : "") + '"></span>').join("") : "");
+  }
+  function rgZeige() {
+    const box = $("regel-buehne");
+    const r = rg.liste[rg.index];
+    rg.sig = r ? JSON.stringify(r) : "leer";
+    // Alte Folie blendet aus (--dauer-folie-aus) und wird danach entfernt: per animationend, mit Zeitpolster als Absicherung
+    Array.from(box.children).forEach((c) => {
+      if (c.classList.contains("geht")) return;
+      c.classList.add("geht");
+      const weg = () => c.remove();
+      c.addEventListener("animationend", (e) => { if (e.target === c) weg(); });
+      setTimeout(weg, dauerMs("--dauer-folie-aus", 220) + 100);
+    });
+    const el = document.createElement("div");
+    el.className = "folie";
+    if (!r) {
+      el.innerHTML = '<div class="regel-leer"><h1>Noch keine Regeln</h1><p>Die Spielleitung kann die Regel-Folien im Bedienfenster unter „Regeln“ anlegen.</p></div>';
+    } else {
+      const t = r.text || "";
+      el.innerHTML = '<h1 class="regel-titel' + (r.titel.length > 40 ? " lang" : "") + '">' + esc(r.titel) + "</h1>" +
+        (t ? '<p class="regel-text' + (t.length > 260 ? " lang" : "") + '">' + esc(t) + "</p>" : "") +
+        (r.wuerfel ? wuerfelBlock(r.wuerfel, false) : "");
+    }
+    box.appendChild(el);
+    rgPunkte();
+  }
+  function zeichneRegeln(z) {
+    const neuAktiv = !rg.aktiv;
+    rg.aktiv = true;
+    rg.liste = z.regeln || [];
+    rg.n = rg.liste.length;
+    const neuNonce = z.regel_nonce !== rg.nonce;
+    const iv = Math.max(5, Math.min(120, z.regeln_intervall_s || 12));
+    const ivNeu = iv !== rg.intervall;
+    rg.intervall = iv;
+    if (neuNonce) { rg.nonce = z.regel_nonce; rg.index = z.regel_index || 0; }
+    if (rg.index >= rg.n) rg.index = 0;
+    const sig = rg.n ? JSON.stringify(rg.liste[rg.index]) : "leer";
+    if (neuNonce || neuAktiv || sig !== rg.sig) rgZeige(); else rgPunkte();
+    if (neuNonce || neuAktiv || ivNeu || rg.nPlan !== rg.n) rgPlane();
+  }
+
+  // ------------------------------------------------------------------ Bilder
+  window.bilderSetzen = function (map) {
+    window.BILDER = map && typeof map === "object" ? map : {};
+    bilderVersion++;
+    if (letztesZ) window.render(letztesZ);
+  };
+
   // ------------------------------------------------------------------ Einstieg
   window.render = function (z) {
+    letztesZ = z;
     try { zeichne(z); } catch (err) { console.error(err); }
     if (z && z.ereignis) ereignis(z.ereignis);
   };
@@ -254,10 +338,16 @@
     const param = new URLSearchParams(location.search).get("ansicht");
     const api = window.MockApi;
     if (param) {
+      window.BILDER = api._bilder();
       window.render(api._vorfuehren(param));
     } else {
+      window.BILDER = api._bilder();
       api.zustand().then((z) => window.render(z));
-      if (api._kanal) api._kanal.onmessage = (m) => window.render(m.data);
+      if (api._kanal) api._kanal.onmessage = (m) => {
+        const d = m.data;
+        if (d && d._bilder) { window.BILDER = d._bilder; bilderVersion++; }
+        window.render(d);
+      };
     }
   }, false);
 })();

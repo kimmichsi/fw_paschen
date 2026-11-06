@@ -1,55 +1,93 @@
-/* Beamer-Fenster: dunkel, hoher Kontrast, Groessen relativ zur Fensterbreite/-hoehe */
+/* Beamer-Fenster. Gestaltung nach unslop; Regeln fuer lichtschwache Beamer bei Licht im Raum gelten zuerst:
+   - "hell" (Standard): dicke dunkle Raender an Kacheln und Karten, kein Text heller als #3A3A3A,
+     nichts ueber Deckkraft ausgeblendet, heller Grund.
+   - Beamer-Schrift mindestens Gewicht 500, wichtige Zahlen und Namen 600 bis 700.
+   - Abstaende sind Vielfache von .2rem (= 4px bei 1920 Breite), Radien .4 / .6 / .8rem (= 8 / 12 / 16px).
+   Das Design steckt in den Variablen unten; die Regeln danach sind fuer beide Designs gleich. */
 html { font-size: clamp(11px, min(1.05vw, 1.95vh), 44px); }
-body { overflow: hidden; cursor: none; }
+body { overflow: hidden; cursor: none; font-weight: 500; }
 
-#buehne {
-  height: 100vh;
-  display: grid;
-  grid-template-rows: auto 1fr;
-  padding: 1.6rem 2.2rem 1.8rem;
-  gap: 1.2rem;
-  background:
-    radial-gradient(ellipse at 15% -10%, rgba(90, 169, 255, .10), transparent 55%),
-    var(--bg);
+:root {
+  --r-0: .2rem; --r-1: .4rem; --r-2: .6rem; --r-3: .8rem;
+  --icon-strich: 1.8;
 }
 
-.kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 2rem; }
-.titel { font-family: var(--schrift-titel); font-size: 2.3rem; font-weight: 700; letter-spacing: .01em; }
-.titel span { color: var(--akzent); }
-.fortschritt { font-size: 1.55rem; color: var(--text-leise); font-variant-numeric: tabular-nums; }
-.fortschritt b { color: var(--text); font-weight: 600; }
+/* Design "dunkel": Graphit aus basis.css, Haarlinien */
+body {
+  --rand: rgba(237, 237, 237, .16);
+  --kante: 1px;                 /* Rand von Kacheln und Karten */
+  --kante-farbe: rgba(237, 237, 237, .16);
+  --linie: 1px;                 /* Trennlinien in Listen */
+  --linie-farbe: rgba(237, 237, 237, .12);
+  --zebra: transparent;
+  --scrim: #0f0f10;
+  --sperr-a: transparent; --sperr-b: transparent;
+  --bild-rand: 1px solid rgba(237, 237, 237, .16);
+}
+
+/* Design "hell" (Standard): Graphit hell, dicke dunkle Raender, kraeftige Schrift */
+body[data-design="hell"] {
+  --bg: #F4F4F5;
+  --tief: #FAFAFA;
+  --flaeche: #FFFFFF;
+  --flaeche-2: #FFFFFF;
+  --flaeche-3: #CFCFCF;          /* Balkenspur */
+  --rand: #222222;
+  --text: #171717;
+  --text-leise: #3A3A3A;         /* nichts heller */
+  --text-still: #3A3A3A;
+  --invers: #171717;
+  --invers-text: #FFFFFF;
+  --akzent-text: #C8102E;
+  --negativ: #C8102E;
+  --kante: .2rem;
+  --kante-farbe: #222222;
+  --linie: .12rem;
+  --linie-farbe: #8A8A8A;
+  --zebra: #ECECEC;
+  --scrim: #E6E6E8;
+  --sperr-a: #ECECEC; --sperr-b: #DADADA;
+  --bild-rand: .17rem solid #171717;
+  --icon-strich: 2.4;
+  --w-fuell: #C8102E; --w-rand: #171717; --w-auge: #FFFFFF; --b-fuell: #222222; --b-rand: #171717; --b-band: #C8102E; --b-mund: #171717; --w-dicke: 6;
+}
+
+#buehne { height: 100vh; display: grid; grid-template-rows: auto 1fr; padding: 1.4rem 2.4rem 1.6rem; gap: 1.2rem; background: var(--bg); }
+
+.kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 2rem; padding-bottom: .6rem; border-bottom: var(--kante) solid var(--kante-farbe); }
+.titel { font-size: 2.6rem; line-height: 1.1; font-weight: 700; letter-spacing: -.02em; }
+.titel span { color: var(--text-leise); font-weight: 500; font-variant-numeric: tabular-nums; }
+.fortschritt { font-size: 1.8rem; color: var(--text-leise); font-weight: 500; font-variant-numeric: tabular-nums; }
+.fortschritt b { color: var(--text); font-weight: 700; }
 
 .ansicht { min-height: 0; }
-/* Ansichtswechsel (selten): Elemente erscheinen gestaffelt (JS vergibt --i), 340 ms ease-out, nie aus scale(0) */
+/* Ansichtswechsel (selten): Elemente erscheinen gestaffelt (JS vergibt --i), eine Kurve, nie aus scale(0) */
 @keyframes ein { from { opacity: 0; transform: translateY(var(--versatz)); } to { opacity: 1; transform: none; } }
 .stufe { animation: ein var(--dauer-ein) var(--ease-out) backwards; animation-delay: calc(var(--i, 0) * var(--stagger)); }
 .zentriert { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.gross { font-size: 2.2rem; margin: 0; }
+.gross { font-size: 2.4rem; margin: 0; font-weight: 500; }
 
-.karte {
-  background: var(--flaeche);
-  border: 1px solid var(--rand);
-  border-radius: 1.1rem;
-  padding: 1.2rem 1.5rem;
-}
-.karte h2 { margin: 0 0 .7rem; font-size: 1.1rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-leise); }
+.karte { background: var(--flaeche); border: var(--kante) solid var(--kante-farbe); border-radius: var(--r-3); padding: 1.2rem 1.6rem; }
+.karte h2 { margin: 0 0 .8rem; font-size: 1.3rem; font-weight: 600; color: var(--text-leise); }
 
 /* ---------------------------------------------------------------- Spielansicht */
-.spiel { display: grid; grid-template-columns: 1.85fr 1fr; gap: 1.8rem; }
-.links { display: flex; flex-direction: column; gap: 1.1rem; min-height: 0; }
+.spiel { display: grid; grid-template-columns: 1.85fr 1fr; gap: 2rem; }
+.links { display: flex; flex-direction: column; gap: 1.2rem; min-height: 0; }
 .rechts { display: flex; flex-direction: column; gap: 1.2rem; min-height: 0; }
 
-.phasenkopf { display: flex; align-items: baseline; gap: 1rem; min-width: 0; }
-.phasenkopf h2 { margin: 0; font-size: 1.9rem; font-family: var(--schrift-titel); font-weight: 650; flex: 0 1 auto; min-width: 0; line-height: 1.15;
+/* Die aktive Phase traegt das Wuerfelauge */
+.phasenkopf { display: flex; align-items: center; gap: 1.2rem; min-width: 0; }
+.phasenkopf .aug { font-size: 1.8rem; }
+.phasenkopf h2 { margin: 0; font-size: 2.2rem; font-weight: 700; color: var(--text); flex: 0 1 auto; min-width: 0; line-height: 1.15; letter-spacing: -.01em;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
-.phasenkopf h2.lang { font-size: 1.5rem; }
-.phasenkopf span { color: var(--text-leise); font-size: 1.3rem; flex: none; white-space: nowrap; }
+.phasenkopf h2.lang { font-size: 1.8rem; }
+.phasenkopf span:not(.aug) { color: var(--text-leise); font-size: 1.5rem; font-weight: 500; flex: none; white-space: nowrap; }
 
 .kacheln {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  grid-auto-rows: minmax(9.5rem, 13.5rem);
-  gap: 1.1rem;
+  grid-auto-rows: minmax(9.6rem, 13.6rem);
+  gap: 1.2rem;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -63,388 +101,262 @@ body { overflow: hidden; cursor: none; }
   column-gap: 1rem;
   align-items: center;
   background: var(--flaeche-2);
-  border: 1px solid var(--rand);
-  border-radius: 1.1rem;
-  padding: 1rem 1.2rem .9rem;
+  border: var(--kante) solid var(--kante-farbe);
+  border-radius: var(--r-3);
+  padding: 1rem 1.2rem;
   overflow: hidden;
   transition: opacity var(--dauer-kachel) var(--ease-out), background-color var(--dauer-kachel) var(--ease-out), border-color var(--dauer-kachel) var(--ease-out);
 }
-.kachel .ik { display: flex; font-size: 3.8rem; color: var(--akzent); grid-row: 1 / 3; transition: color var(--dauer-kachel) var(--ease-out); }
-.kachel .name { font-size: 2rem; font-weight: 650; line-height: 1.15; align-self: end; min-width: 0; overflow-wrap: anywhere;
+.kachel .ik { display: flex; font-size: 3.8rem; color: var(--text); grid-row: 1 / 3; }
+.kachel .ik.mit-bild { font-size: 4.2rem; }
+.kachel .name { font-size: 2rem; font-weight: 600; line-height: 1.15; align-self: end; min-width: 0; overflow-wrap: anywhere;
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
-.kachel .name.lang { font-size: 1.4rem; }
-.kachel .name.sehr-lang { font-size: 1.1rem; }
-.kachel .rest { font-size: 1.6rem; color: var(--text-leise); font-variant-numeric: tabular-nums; align-self: start; }
-.kachel .rest b { color: var(--text); font-size: 3rem; line-height: 1; font-weight: 700; }
-.kachel .balken { grid-column: 1 / 3; height: .45rem; border-radius: .3rem; background: var(--flaeche-3); margin-top: .5rem; overflow: hidden; }
-.kachel .rest b { font-variant-numeric: tabular-nums; }
+.kachel .name.lang { font-size: 1.55rem; }
+.kachel .name.sehr-lang { font-size: 1.2rem; }
+/* Kachel mit Bild: Name etwas kleiner, damit auch "Ringwurst" bei 1280 px nicht mitten im Wort bricht */
+.kacheln:not(.viele) .kachel:has(.mit-bild) .name:not(.lang):not(.sehr-lang) { font-size: 1.7rem; }
+.kachel .rest { font-size: 1.7rem; color: var(--text-leise); font-weight: 500; font-variant-numeric: tabular-nums; align-self: start; }
+.kachel .rest b { color: var(--text); font-size: 3.4rem; line-height: 1; font-weight: 700; }
+.kachel .balken { grid-column: 1 / 3; height: 1rem; border-radius: var(--r-0); background: var(--flaeche-3); margin-top: .6rem; overflow: hidden; }
 /* Ab 10 Kacheln: kompakte Darstellung, damit alle sichtbar bleiben */
-.kacheln.viele { grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); grid-auto-rows: minmax(5.6rem, 8.5rem); gap: .7rem; }
-.viele .kachel { grid-template-rows: auto auto auto; row-gap: .1rem; column-gap: .6rem; padding: .55rem .7rem .5rem; border-radius: .8rem; }
-.viele .kachel .ik { font-size: 2.2rem; grid-row: 1 / 3; }
+.kacheln.viele { grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); grid-auto-rows: minmax(5.6rem, 8.6rem); gap: .8rem; }
+.viele .kachel { grid-template-rows: auto auto auto; row-gap: .2rem; column-gap: .6rem; padding: .4rem .6rem .6rem; border-radius: var(--r-2); }
+.viele .kachel .ik { font-size: 2.6rem; grid-row: 1 / 3; }
+.viele .kachel .ik.mit-bild { font-size: 3.2rem; }
 /* Kompakt: Namen hoechstens 2 Zeilen, Groesse nach Laenge (JS: lang > 14, sehr-lang > 22 Zeichen); kein hyphens:auto noetig */
-.viele .kachel .name { font-size: 1.15rem; line-height: 1.1; -webkit-line-clamp: 2; line-clamp: 2; }
-.viele .kachel .name.lang { font-size: 1rem; }
+.viele .kachel .name { font-size: 1.25rem; line-height: 1.1; -webkit-line-clamp: 2; line-clamp: 2; }
+.viele .kachel .name.lang { font-size: 1.05rem; }
 .viele .kachel .name.sehr-lang { font-size: .85rem; line-height: 1.05; }
-.viele .kachel .rest { font-size: 1rem; }
-.viele .kachel .rest b { font-size: 1.8rem; }
-.viele .kachel .balken { height: .3rem; margin-top: .25rem; }
-/* Fortschritt ueber transform (GPU), nicht ueber width; Container rundet, Fuellung ist eckig */
-.kachel .balken i { display: block; width: 100%; height: 100%; background: var(--akzent); transform-origin: left center; transition: transform var(--dauer-kachel) var(--ease-out), background-color var(--dauer-kachel) var(--ease-out); }
-.kachel.leer { opacity: .38; background: transparent; }
-.kachel.leer .name { text-decoration: line-through; text-decoration-thickness: .12rem; }
-.kachel.leer .ik { color: var(--text-leise); }
-.kachel.wenig .balken i { background: var(--gold); }
+.viele .kachel .rest { font-size: 1.1rem; }
+.viele .kachel .rest b { font-size: 2rem; }
+.viele .kachel .balken { height: .8rem; margin-top: .2rem; }
+/* Fortschritt ueber transform, nicht ueber width; Container rundet, Fuellung ist eckig */
+.kachel .balken i { display: block; width: 100%; height: 100%; background: var(--text); transform-origin: left center; transition: transform var(--dauer-kachel) var(--ease-out); }
+/* Wenig uebrig: rote Zahl (Bedeutung: knapp), die Zahl bleibt gross sichtbar */
+.kachel.wenig { border-color: var(--akzent-text); }
+.kachel.wenig .rest b { color: var(--akzent-text); }
+/* Vergeben: nicht ausgeblendet, sondern durchgestrichen, schraffiert, gestrichelter Rand */
+.kachel.leer { border-style: dashed; background: repeating-linear-gradient(135deg, var(--sperr-a) 0 .6rem, var(--sperr-b) .6rem 1.2rem); }
+body:not([data-design="hell"]) .kachel.leer { opacity: .45; background: transparent; }
+.kachel.leer .name { text-decoration: line-through; text-decoration-thickness: .2rem; }
+.viele .kachel.leer .name { text-decoration-thickness: .1rem; }
+.kachel.leer .rest { color: var(--text); font-weight: 700; }
+.kachel.leer .ik, .kachel.leer .balken i { color: var(--text-leise); }
+.kachel.leer .balken i { background: var(--text-leise); }
+.kachel.leer .bild { filter: grayscale(1); }
 
-.spezial-reihe { display: flex; gap: 1rem; flex-wrap: wrap; min-width: 0; }
-.spezial-reihe:has(.spezial:nth-child(2)) .spezial { max-width: calc(50% - .5rem); }
+/* Spezialpreis: umgekehrte Flaeche (neutral), die Sonderrunde folgt */
+.spezial-reihe { display: flex; gap: 1.2rem; flex-wrap: wrap; min-width: 0; }
+.spezial-reihe:has(.spezial:nth-child(2)) .spezial { max-width: calc(50% - .6rem); }
 .spezial-reihe:empty { display: none; }
 .spezial {
-  display: flex; align-items: center; gap: 1.1rem;
-  padding: .8rem 1.5rem .8rem 1.1rem;
-  border: .17rem solid var(--gold);
-  border-radius: 1.1rem;
-  background: linear-gradient(135deg, rgba(245, 185, 66, .20), rgba(245, 185, 66, .06));
-  box-shadow: 0 0 2.2rem rgba(245, 185, 66, .16);
+  display: flex; align-items: center; gap: 1.2rem;
+  padding: .8rem 1.6rem .8rem 1.2rem;
+  border-radius: var(--r-3);
+  background: var(--invers); color: var(--invers-text);
+  max-width: 100%; min-width: 0;
 }
-.spezial .icon { font-size: 3rem; color: var(--gold); }
-.spezial { max-width: 100%; min-width: 0; }
+.spezial .icon { font-size: 3.4rem; }
+.spezial .bild { font-size: 3.6rem; box-shadow: none; }
 .spezial > div { min-width: 0; }
-.spezial .name { font-size: 1.7rem; font-weight: 700; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; line-height: 1.15; }
-.spezial .hinweis { font-size: 1.1rem; color: var(--gold); letter-spacing: .1em; text-transform: uppercase; font-weight: 600; }
+.spezial .name { font-size: 1.9rem; font-weight: 700; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; line-height: 1.15; }
+.spezial .hinweis { font-size: 1.3rem; font-weight: 600; }
 
-.kommend { display: flex; gap: .9rem; flex-wrap: wrap; align-items: center; color: var(--text-leise); font-size: 1.1rem; }
+.kommend { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; color: var(--text-leise); font-size: 1.3rem; font-weight: 600; }
 .kommend:empty { display: none; }
-.kommend .chip { display: inline-flex; align-items: center; gap: .6rem; padding: .45rem .9rem; border: 1px dashed var(--rand); border-radius: 2rem; max-width: 48%; min-width: 0; }
+.kommend .chip { display: inline-flex; align-items: center; gap: .6rem; padding: .4rem 1rem; border: var(--kante) dashed var(--kante-farbe); border-radius: var(--r-2); max-width: 48%; min-width: 0; }
 .kommend .chip > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.kommend .chip .icon { font-size: 1.3rem; }
-.kommend .chip b { color: var(--text); font-weight: 600; }
+.kommend .chip .icon { font-size: 1.4rem; }
+.kommend .chip b { color: var(--text); font-weight: 700; }
 
 /* Letzter Gewinner */
-.letzter .etikett, .etikett { font-size: 1.1rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-leise); margin: 0 0 .5rem; }
-.letzter .wer { font-family: var(--schrift-titel); font-size: 2.9rem; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+.etikett, .letzter .etikett { font-size: 1.3rem; font-weight: 600; color: var(--text-leise); margin: 0 0 .6rem; }
+.letzter .wer { font-size: 2.9rem; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; letter-spacing: -.01em; }
 .letzter .wer.lang { font-size: 2rem; }
-.letzter .was span:not(.icon) { min-width: 0; overflow-wrap: anywhere; }
-.letzter .was { display: flex; align-items: center; gap: .8rem; font-size: 1.8rem; margin-top: .7rem; color: var(--akzent); }
-.letzter .was .icon { font-size: 2.2rem; }
-.letzter .was.sonder { color: var(--gold); }
-.letzter .runde { color: var(--text-leise); font-size: 1.15rem; margin-top: .5rem; }
-.letzter .keiner { font-size: 1.6rem; color: var(--text-leise); }
+.letzter .wer.kappe.lang { -webkit-line-clamp: 2; line-clamp: 2; }
+.letzter .was span:not(.icon):not(.bild) { min-width: 0; overflow-wrap: anywhere; }
+.letzter .was { display: flex; align-items: center; gap: .8rem; font-size: 1.9rem; font-weight: 600; margin-top: .8rem; }
+.letzter .was .icon { font-size: 2.4rem; }
+.letzter .was .bild { font-size: 3.4rem; }
+.letzter .runde { color: var(--text-leise); font-size: 1.3rem; font-weight: 500; margin-top: .6rem; }
+.letzter .keiner { font-size: 1.6rem; color: var(--text-leise); font-weight: 500; }
 
-/* Top 10 */
+/* Top 10: Platz 1 traegt das Wuerfelauge, die Spalte dafuer ist in jeder Zeile gleich breit */
 .top10 { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.top10 ol { list-style: none; margin: 0; padding: 0; display: grid; gap: .1rem; flex: 1; align-content: start; }
-.top10 li { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; gap: .5rem; align-items: baseline; padding: .32rem 0; font-size: 1.45rem; border-bottom: 1px solid rgba(255, 255, 255, .05); }
-.top10 li .platz { color: var(--text-leise); font-variant-numeric: tabular-nums; }
-.top10 li .anz { font-weight: 700; color: var(--akzent); font-variant-numeric: tabular-nums; }
-.top10 li:nth-child(-n+3) .name { font-weight: 650; }
-.top10 .leer { color: var(--text-leise); font-size: 1.3rem; }
-.top10 li .anz, .ende-top .anz { font-variant-numeric: tabular-nums; }
-.ende-top .leer, .leer-text { color: var(--text-leise); font-size: 1.5rem; grid-column: 1 / -1; text-align: center; padding: 1rem 0; }
-.statistik .leer-text { text-align: left; font-size: 1.3rem; }
+.top10 ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; flex: 1; align-content: start; }
+.top10 li, .ende-top .zeile { display: grid; align-items: baseline; }
+.top10 li { grid-template-columns: .8rem 2.4rem minmax(0, 1fr) auto; column-gap: .4rem; padding: .28rem 0; font-size: 1.4rem; line-height: 1.2; font-weight: 600; border-bottom: var(--linie) solid var(--linie-farbe); }
+.top10 li::before, .ende-top .zeile::before { content: ""; width: .8rem; height: .8rem; border-radius: 50%; align-self: center; }
+.top10 li:first-child::before, .ende-top .zeile.erster::before { background: var(--akzent); }
+.top10 li .platz { color: var(--text-leise); font-variant-numeric: tabular-nums; font-weight: 500; }
+.top10 li .anz { font-weight: 700; font-variant-numeric: tabular-nums; }
+.top10 li:nth-child(-n+3) .name { font-weight: 700; }
+.top10 .leer { color: var(--text-leise); font-size: 1.4rem; }
+.ende-top .anz { font-variant-numeric: tabular-nums; }
+.ende-top .leer, .leer-text { color: var(--text-leise); font-size: 1.6rem; grid-column: 1 / -1; text-align: center; padding: 1rem 0; font-weight: 500; }
+.statistik .leer-text { text-align: left; font-size: 1.4rem; }
+.kacheln .leer-text { text-align: left; padding: .2rem 0 0; font-size: 1.6rem; }
 
 /* ---------------------------------------------------------------- Sonderrunde */
-.sonder { gap: 1.2rem; }
-.sonder .etikett { color: var(--gold); font-size: 2rem; margin: 0; }
-.sonder-icon .icon { font-size: 14rem; color: var(--gold); filter: drop-shadow(0 0 2rem rgba(245, 185, 66, .35)); animation: puls var(--dauer-puls) var(--ease-in-out) infinite; }
-@keyframes puls { 50% { transform: scale(1.04); } }
-.sonder h1 { margin: 0; font-family: var(--schrift-titel); font-size: 6rem; line-height: 1.05; }
+.sonder { gap: 1.2rem; background: var(--flaeche); border: var(--kante) solid var(--kante-farbe); border-radius: var(--r-3); --icon-strich: 1.4; }
+.sonder .etikett { color: var(--text-leise); font-size: 2.4rem; margin: 0; font-weight: 600; }
+.sonder-icon .icon { font-size: 14rem; }
+.sonder-icon .bild { font-size: 14rem; border-radius: var(--r-3); }
+.sonder h1 { margin: 0; font-size: 7rem; font-weight: 700; line-height: 1.05; letter-spacing: -.03em; }
+.sonder .gross { color: var(--text-leise); font-size: 2.6rem; }
+.sonder h1.lang { font-size: 4.6rem; letter-spacing: -.02em; }
+.sonder h1.sehr-lang { font-size: 3.4rem; letter-spacing: 0; }
+.sonder h1.lang ~ .gross, .sonder h1.sehr-lang ~ .gross { font-size: 2rem; }
+.sonder:has(h1.lang) .sonder-icon .icon, .sonder:has(h1.sehr-lang) .sonder-icon .icon,
+.sonder:has(h1.lang) .sonder-icon .bild, .sonder:has(h1.sehr-lang) .sonder-icon .bild { font-size: 9rem; }
 
 /* ---------------------------------------------------------------- Ende */
 .ende { display: flex; flex-direction: column; align-items: center; gap: .8rem; text-align: center; }
-.ende h1 { margin: .4rem 0 0; font-family: var(--schrift-titel); font-size: 4.6rem; }
-.ende-info { font-size: 1.6rem; margin: 0 0 1rem; }
-.ende-top { width: min(80rem, 100%); display: grid; grid-template-columns: 1fr 1fr; column-gap: 3rem; text-align: left; }
-.ende-top .zeile { display: grid; grid-template-columns: 2.4rem minmax(0, 1fr) auto; gap: .6rem; align-items: baseline; font-size: 2rem; padding: .5rem 0; border-bottom: 1px solid var(--rand); }
-.ende-top .platz { color: var(--text-leise); }
-.ende-top .anz { color: var(--akzent); font-weight: 700; }
-.ende-top .zeile.erster .name { color: var(--gold); font-weight: 700; }
+.ende h1 { margin: .4rem 0 0; font-size: 5rem; font-weight: 700; letter-spacing: -.03em; }
+.ende-info { font-size: 1.8rem; margin: 0 0 1rem; color: var(--text-leise); font-weight: 500; }
+.ende-top { width: min(92rem, 100%); display: grid; grid-template-columns: 1fr 1fr; column-gap: 3rem; text-align: left; }
+.ende-top .zeile { grid-template-columns: .8rem 3.8rem minmax(0, 1fr) auto; column-gap: .6rem; font-size: 2.6rem; font-weight: 600; padding: .6rem 0; border-bottom: var(--linie) solid var(--linie-farbe); }
+.ende-top .platz { color: var(--text-leise); font-weight: 500; font-variant-numeric: tabular-nums; }
+.ende-top .anz { font-weight: 700; }
+.ende-top .zeile.erster .name { font-weight: 700; }
+.ende-top .kappe { -webkit-line-clamp: 2; line-clamp: 2; line-height: 1.1; }
+.ende-top .name.lang { font-size: .72em; }
 
 /* ---------------------------------------------------------------- Statistik */
 .statistik { display: grid; grid-template-columns: 1.55fr 1fr; gap: 1.6rem; }
 .statistik .liste { overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
-.statistik table.daten { font-size: 1.3rem; }
+.statistik table.daten { font-size: 1.4rem; font-weight: 500; }
+.statistik table.daten th, .statistik table.daten td { padding: .4rem .6rem; border-bottom: 0; }
+.statistik table.daten th { color: var(--text-leise); font-weight: 600; border-bottom: var(--kante) solid var(--kante-farbe); }
+.statistik table.daten tbody tr:nth-child(odd) { background: var(--zebra); }
+.statistik table.daten tbody td { border-bottom: 0; }
+.statistik table.daten td.gesamt, .statistik table.daten th.gesamt { color: var(--text); font-weight: 700; }
 .statistik .kappe { -webkit-line-clamp: 2; line-clamp: 2; line-height: 1.15; }
 .statistik td.name { min-width: 9rem; }
 /* Viele Jahre (ab 9): Tabellen enger setzen, damit Gesamt und alle Karten sichtbar bleiben */
 .statistik table.daten.eng { font-size: 1.1rem; }
-.statistik table.daten.eng th, .statistik table.daten.eng td { padding: .2rem .15rem; }
-.statistik table.daten.eng th:first-child, .statistik table.daten.eng td.name { width: 13rem; min-width: 11rem; padding-left: .3rem; }
-.statistik table.daten.eng th.gesamt, .statistik table.daten.eng td.gesamt { padding-right: .3rem; }
-.stat-rechts table.daten.eng { font-size: 1rem; }
-.stat-rechts table.daten.eng th, .stat-rechts table.daten.eng td { padding: .03rem .5rem; line-height: 1.2; }
-.rekord ul.viele { columns: 2; font-size: .95rem; }
-.statistik table.daten th, .statistik table.daten td { padding: .3rem .65rem; }
-.stat-rechts { display: flex; flex-direction: column; gap: 1.1rem; min-height: 0; }
-.stat-rechts table.daten { font-size: 1.2rem; }
-.rekord p { margin: .1rem 0; font-size: 1.25rem; }
-.rekord .rekord-gross { font-size: 2.6rem; font-weight: 700; color: var(--gold); font-family: var(--schrift-titel); }
-.rekord ol { margin: 0; padding-left: 1.5rem; font-size: 1.2rem; line-height: 1.55; }
-.rekord ul { margin: .4rem 0 0; padding: 0; list-style: none; font-size: 1.05rem; color: var(--text-leise); columns: 2; }
+.statistik table.daten.eng th { font-size: .95rem; }
+.statistik table.daten.eng th, .statistik table.daten.eng td { padding: .2rem .1rem; }
+.statistik table.daten.eng th:first-child, .statistik table.daten.eng td.name { width: 12rem; min-width: 10rem; padding-left: .4rem; }
+.statistik table.daten.eng th.gesamt, .statistik table.daten.eng td.gesamt { padding-right: .4rem; }
+.stat-rechts { display: flex; flex-direction: column; gap: .8rem; min-height: 0; }
+.stat-rechts .karte { padding: .8rem 1.2rem; }
+.stat-rechts .karte h2 { margin-bottom: .4rem; }
+.stat-rechts table.daten { font-size: 1.35rem; }
+.stat-rechts table.daten th, .stat-rechts table.daten td { padding: .2rem .6rem; }
+.stat-rechts table.daten.eng { font-size: 1.05rem; }
+.stat-rechts table.daten.eng th, .stat-rechts table.daten.eng td { padding: .04rem .6rem; line-height: 1.2; }
+.rekord p { margin: .2rem 0; font-size: 1.2rem; font-weight: 600; }
+.rekord .rekord-gross { font-size: 2.2rem; line-height: 1.1; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+.rekord ol { margin: 0; padding-left: 1.2rem; font-size: 1.25rem; line-height: 1.35; font-weight: 600; }
+.rekord ul { margin: .4rem 0 0; padding: 0; list-style: none; font-size: 1.15rem; color: var(--text-leise); font-weight: 600; columns: 2; }
+.rekord ul.viele { font-size: 1rem; }
 .rekord p, .rekord li { overflow-wrap: anywhere; }
-.rekord b { color: var(--akzent); font-weight: 650; }
-.rekord-zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 1.1rem; }
+.rekord b { color: var(--text); font-weight: 700; }
+.rekord-zwei { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.2rem; }
+/* Viele Jahre: rechte Spalte noch dichter, damit alle vier Karten ins Bild passen (Namen bleiben zweizeilig) */
+.statistik.eng .stat-rechts { gap: .6rem; }
+.statistik.eng .stat-rechts .karte { padding-top: .6rem; padding-bottom: .6rem; }
+.statistik.eng .stat-rechts .karte h2 { margin-bottom: .2rem; font-size: 1.1rem; }
+.statistik.eng .stat-rechts table.daten th, .statistik.eng .stat-rechts table.daten td { padding-top: 0; padding-bottom: 0; line-height: 1.1; }
+.statistik.eng .stat-rechts table.daten.eng { font-size: .95rem; }
+.statistik.eng .rekord ol { font-size: .98rem; line-height: 1.12; margin-top: 0; }
+.statistik.eng .rekord .rekord-gross { font-size: 1.6rem; line-height: 1; }
+.statistik.eng .rekord p { font-size: 1.05rem; }
+.statistik.eng .rekord ul.viele { font-size: .85rem; line-height: 1.12; margin-top: .2rem; }
+.statistik.eng .rekord .kappe { line-height: 1.12; }
 
-/* ---------------------------------------------------------------- Overlay */
+/* ---------------------------------------------------------------- Overlay (Sieg, Phasenwechsel)
+   Volle Flaeche ohne Transparenz und Unschaerfe. Der Sieg zeigt drei rote Wuerfel: drei Einsen schlagen alles. */
 .overlay {
   position: fixed; inset: 0; z-index: 10;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(8, 11, 16, .78);
-  backdrop-filter: blur(.6rem);
+  background: var(--scrim);
   opacity: 0;
   transition: opacity var(--dauer-overlay-aus) var(--ease-out);        /* aus: schnell */
 }
 .overlay.an { opacity: 1; transition-duration: var(--dauer-overlay-bg); }  /* ein: etwas laenger */
 .overlay-karte {
   text-align: center;
-  padding: 3rem 5rem;
-  border-radius: 1.6rem;
+  padding: 2.4rem 4.8rem 3.2rem;
+  border-radius: var(--r-3);
   background: var(--flaeche);
-  border: 1px solid var(--rand);
-  box-shadow: var(--schatten);
+  border: var(--kante) solid var(--kante-farbe);
   max-width: 90vw;
 }
-/* Karte: scale .95 -> 1, ease-out, ohne Ueberschwingen; Inhalte folgen gestaffelt */
+/* Karte: scale .95 -> 1, ohne Ueberschwingen; Inhalte folgen gestaffelt */
 .overlay.an .overlay-karte { animation: auf var(--dauer-overlay) var(--ease-out) backwards; }
 @keyframes auf { from { opacity: 0; transform: scale(var(--skala-ein)); } to { opacity: 1; transform: none; } }
 .overlay.an .overlay-karte > * { animation: ein var(--dauer-ein) var(--ease-out) backwards; animation-delay: calc(var(--overlay-verzug) + var(--i, 0) * var(--overlay-stagger)); }
 .overlay-karte > :nth-child(2) { --i: 1; }
 .overlay-karte > :nth-child(3) { --i: 2; }
 .overlay-karte > :nth-child(4) { --i: 3; }
-.overlay-karte .klein { font-size: 1.6rem; color: var(--text-leise); letter-spacing: .08em; text-transform: uppercase; }
-.overlay-karte .wer { font-family: var(--schrift-titel); font-size: 6rem; font-weight: 700; line-height: 1.08; margin: .4rem 0; overflow-wrap: anywhere; text-wrap: balance; }
-.overlay-karte .was span:not(.icon) { min-width: 0; overflow-wrap: anywhere; }
+.overlay-karte .wurf { --d: 6rem; margin-bottom: 1.6rem; }
+.overlay-karte .klein { font-size: 2.2rem; font-weight: 600; color: var(--text-leise); }
+.overlay-karte .wer { font-size: 8rem; font-weight: 700; line-height: 1.08; margin: .4rem 0; overflow-wrap: anywhere; text-wrap: balance; letter-spacing: -.03em; }
+.overlay-karte .was span:not(.icon):not(.bild) { min-width: 0; overflow-wrap: anywhere; }
 /* Lange Namen im Overlay: Schrift kleiner statt aus dem Bild zu laufen */
-.overlay-karte .wer.lang { font-size: 4.4rem; }
-.overlay-karte .wer.sehr-lang { font-size: 3.2rem; }
-.overlay-karte .was.lang, .overlay-karte .weiter.lang { font-size: 2.2rem; }
-.overlay-karte.wechsel .wer.lang { font-size: 3.4rem; }
-.overlay-karte.wechsel .wer.sehr-lang { font-size: 2.6rem; }
-.overlay-karte .was { display: flex; align-items: center; justify-content: center; gap: 1.2rem; font-size: 3.4rem; color: var(--akzent); }
-.overlay-karte .was .icon { font-size: 5rem; }
-.overlay-karte .was.sonder { color: var(--gold); }
-.overlay-karte.wechsel .wer { font-size: 4.6rem; }
-.overlay-karte.wechsel .weiter { font-size: 2.8rem; color: var(--akzent); margin-top: .6rem; }
+.overlay-karte .wer.lang { font-size: 5rem; letter-spacing: -.02em; }
+.overlay-karte .wer.sehr-lang { font-size: 3.6rem; letter-spacing: 0; }
+.overlay-karte .was { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1.2rem; font-size: 4.2rem; font-weight: 600; }
+.overlay-karte .was .icon { font-size: 6rem; }
+.overlay-karte .was .bild { font-size: 7rem; }
+.overlay-karte .was.lang, .overlay-karte .weiter.lang { font-size: 2.6rem; }
+.overlay-karte.wechsel .wer { font-size: 6.2rem; }
+.overlay-karte.wechsel .wer.lang { font-size: 3.8rem; }
+.overlay-karte.wechsel .wer.sehr-lang { font-size: 2.8rem; }
+.overlay-karte.wechsel .weiter { font-size: 3.8rem; font-weight: 600; margin-top: .8rem; }
+.overlay-karte.wechsel .weiter b { font-weight: 700; }
 
 /* 4:3 und schmaler: rechte Spalte etwas schmaler, Statistik untereinander knapper */
 @media (max-aspect-ratio: 3/2) {
   .spiel { grid-template-columns: 1.5fr 1fr; gap: 1.2rem; }
-  .kacheln { grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr)); }
-  .letzter .wer { font-size: 2.3rem; }
-  .overlay-karte .wer { font-size: 4.6rem; }
-  .sonder h1 { font-size: 4.6rem; }
+  .kacheln { grid-template-columns: repeat(auto-fill, minmax(12.6rem, 1fr)); }
+  .letzter .wer { font-size: 2.5rem; }
+  .letzter .wer.lang { font-size: 1.8rem; }
+  .overlay-karte .wer { font-size: 6rem; }
+  .overlay-karte.wechsel .wer { font-size: 5rem; }
+  .sonder h1 { font-size: 5.4rem; }
   .ende-top { grid-template-columns: 1fr; }
+  .ende-top .zeile { font-size: 2.2rem; }
   .statistik { grid-template-columns: 1.3fr 1fr; }
 }
 
-/* ================================================================= Design "hell" (Standard)
-   Fuer lichtschwache Beamer bei eingeschaltetem Raumlicht: weisser Grund, fast schwarzer Text,
-   kein Grau unter #3A3A3A, dicke dunkle Raender, kraeftiges Feuerwehr-Rot, keine Transparenz
-   als Bedeutungstraeger. Das Design "dunkel" ist das Grundgeruest oben (Variablen aus basis.css). */
-:root { --icon-strich: 1.6; }
-.icon svg { stroke-width: var(--icon-strich); }
+/* ================================================================= Preisbilder im Beamer
+   Das Bild steht im selben Feld wie das Icon (Schriftgroesse = Kantenlaenge), nur etwas groesser. Die Kachel springt nicht.
+   Die Fotos sind neben den roten Wuerfeln der einzige farbige Moment. */
+.bild { border: var(--bild-rand); box-shadow: none; background: var(--flaeche); }
+.viele .bild { border-width: .12rem; border-radius: var(--r-0); }
+.sonder-icon .bild { border-width: .35rem; }
+body[data-design="hell"] .spezial .bild { border-color: #FFFFFF; border-width: .2rem; }
 
-body[data-design="hell"] {
-  --bg: #F6F6F4;
-  --flaeche: #FFFFFF;
-  --flaeche-2: #FFFFFF;
-  --flaeche-3: #CFCFCF;
-  --rand: #222222;
-  --text: #111111;
-  --text-leise: #2B2B2B;
-  --akzent: #C8102E;
-  --gold: #8E0B20;
-  --icon-strich: 2.5;
-  font-weight: 600;
-}
-body[data-design="hell"] #buehne { background: var(--bg); padding: 1.4rem 2.2rem 1.6rem; }
+/* ================================================================= Demo-Band
+   Umgekehrte Flaeche (dunkel auf hell, hell auf dunkel), ohne Transparenz, in beiden Designs deutlich sichtbar. */
+.demo-band { position: fixed; top: 0; left: 0; right: 0; z-index: 40; height: 2.6rem; display: flex; align-items: center; justify-content: center; gap: .8rem;
+  background: var(--invers); color: var(--invers-text); font-size: 1.4rem; font-weight: 600; white-space: nowrap; }
+.demo-band b { font-weight: 700; border: .12rem solid currentColor; border-radius: var(--r-0); padding: 0 .6rem; }
+body.ist-demo #buehne { padding-top: 4rem; }
 
-/* Kopf */
-body[data-design="hell"] .kopf { border-bottom: .3rem solid var(--akzent); padding-bottom: .5rem; }
-body[data-design="hell"] .titel { font-weight: 800; font-size: 2.6rem; }
-body[data-design="hell"] .fortschritt { font-size: 1.75rem; font-weight: 700; }
-body[data-design="hell"] .fortschritt b { font-weight: 800; }
-
-/* Karten und Kacheln: weiss mit dicker dunkler Umrandung */
-body[data-design="hell"] .karte { border: .2rem solid #222; border-radius: .9rem; }
-body[data-design="hell"] .karte h2 { color: var(--text-leise); font-weight: 800; font-size: 1.2rem; }
-body[data-design="hell"] .phasenkopf h2 { color: var(--akzent); font-weight: 800; font-size: 2.2rem; }
-body[data-design="hell"] .phasenkopf span { color: var(--text-leise); font-weight: 700; font-size: 1.5rem; }
-
-body[data-design="hell"] .kachel { border: .2rem solid #222; border-radius: .9rem; }
-body[data-design="hell"] .viele .kachel { border-width: .16rem; border-radius: .7rem; }
-body[data-design="hell"] .kachel .ik { color: var(--akzent); font-size: 4.2rem; }
-body[data-design="hell"] .viele .kachel .ik { font-size: 2.5rem; }
-body[data-design="hell"] .kachel .name { font-weight: 800; font-size: 2.15rem; }
-body[data-design="hell"] .kachel .name.lang { font-size: 1.55rem; }
-body[data-design="hell"] .viele .kachel { padding: .45rem .6rem .5rem; }
-body[data-design="hell"] .viele .kachel .name { font-size: 1.25rem; }
-body[data-design="hell"] .viele .kachel .name.lang { font-size: 1.05rem; }
-body[data-design="hell"] .kachel .rest { color: var(--text-leise); font-weight: 700; font-size: 1.7rem; }
-body[data-design="hell"] .kachel .rest b { color: var(--text); font-weight: 800; font-size: 3.3rem; }
-body[data-design="hell"] .viele .kachel .rest { font-size: 1.1rem; }
-body[data-design="hell"] .viele .kachel .rest b { font-size: 2rem; }
-body[data-design="hell"] .kachel .balken { height: 1rem; background: var(--flaeche-3); border-radius: .5rem; margin-top: .55rem; }
-body[data-design="hell"] .viele .kachel .balken { height: .8rem; margin-top: .3rem; }
-body[data-design="hell"] .kachel .balken i { background: var(--akzent); }
-/* Wenig uebrig: roter Rahmen und rote Zahl (die Zahl bleibt gross sichtbar) */
-body[data-design="hell"] .kachel.wenig { border-color: var(--akzent); }
-body[data-design="hell"] .kachel.wenig .rest b { color: var(--akzent); }
-/* Vergeben: nicht ausgeblendet, sondern durchgestrichen, schraffiert, gestrichelter Rand */
-body[data-design="hell"] .kachel.leer {
-  opacity: 1;
-  border-style: dashed;
-  background: repeating-linear-gradient(135deg, #ECECEA 0 .6rem, #DCDCD8 .6rem 1.2rem);
-}
-body[data-design="hell"] .kachel.leer .name { text-decoration-thickness: .2rem; text-decoration-color: #111; color: #222; }
-body[data-design="hell"] .kachel.leer .ik { color: #555; }
-body[data-design="hell"] .kachel.leer .rest { color: #111; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
-body[data-design="hell"] .kachel.leer .balken i { background: #555; }
-
-/* Spezialpreis: kraeftige rote Flaeche, weisse Schrift */
-body[data-design="hell"] .spezial { background: var(--akzent); border: .2rem solid #111; box-shadow: none; color: #fff; }
-body[data-design="hell"] .spezial .icon { color: #fff; font-size: 3.3rem; }
-body[data-design="hell"] .spezial .name { color: #fff; font-weight: 800; font-size: 1.9rem; }
-body[data-design="hell"] .spezial .hinweis { color: #fff; font-weight: 800; font-size: 1.2rem; }
-
-body[data-design="hell"] .kommend { color: var(--text-leise); font-weight: 700; font-size: 1.25rem; }
-body[data-design="hell"] .kommend .chip { border: .15rem dashed #222; }
-body[data-design="hell"] .kommend .chip b { color: var(--text); font-weight: 800; }
-
-/* Letzter Gewinner: roter Rahmen */
-body[data-design="hell"] .karte.letzter { border-color: var(--akzent); border-width: .3rem; }
-body[data-design="hell"] .letzter .etikett, body[data-design="hell"] .etikett { color: var(--text-leise); font-weight: 800; font-size: 1.2rem; }
-body[data-design="hell"] .letzter .wer { font-weight: 800; }
-body[data-design="hell"] .letzter .was { color: var(--akzent); font-weight: 800; font-size: 1.9rem; }
-body[data-design="hell"] .letzter .was.sonder { color: var(--akzent); }
-body[data-design="hell"] .letzter .runde { color: var(--text-leise); font-weight: 700; }
-body[data-design="hell"] .letzter .keiner { color: var(--text-leise); font-weight: 700; }
-
-/* Top 10: Platz 1 rot */
-body[data-design="hell"] .top10 li { border-bottom: .12rem solid #8A8A8A; font-size: 1.4rem; line-height: 1.2; padding: .24rem 0; font-weight: 700; }
-body[data-design="hell"] .top10 li .anz { font-weight: 800; color: var(--text); }
-body[data-design="hell"] .top10 li:nth-child(-n+3) .name { font-weight: 800; }
-body[data-design="hell"] .top10 li:first-child, body[data-design="hell"] .top10 li:first-child .anz { color: var(--akzent); font-weight: 800; }
-body[data-design="hell"] .top10 .leer { color: var(--text-leise); font-weight: 700; }
-
-/* Sonderrunde: satte rote Flaeche, weisse Schrift */
-body[data-design="hell"] .sonder { background: var(--akzent); color: #fff; border: .3rem solid #111; border-radius: 1.4rem; }
-body[data-design="hell"] .sonder .etikett { color: #fff; font-weight: 800; font-size: 2.4rem; }
-body[data-design="hell"] .sonder-icon .icon { color: #fff; filter: none; animation: none; font-size: 15rem; --icon-strich: 2; }
-body[data-design="hell"] .sonder h1 { color: #fff; font-weight: 800; font-size: 7rem; }
-body[data-design="hell"] .sonder .gross { color: #fff; font-weight: 700; font-size: 2.6rem; }
-
-/* Ende */
-body[data-design="hell"] .ende h1 { font-weight: 800; color: var(--akzent); font-size: 5rem; }
-body[data-design="hell"] .ende-info { color: var(--text-leise); font-weight: 700; font-size: 1.8rem; }
-body[data-design="hell"] .ende-top { width: min(92rem, 100%); }
-body[data-design="hell"] .ende-top .zeile { grid-template-columns: 3.6rem minmax(0, 1fr) auto; }
-body[data-design="hell"] .top10 li { grid-template-columns: 2.7rem minmax(0, 1fr) auto; }
-body[data-design="hell"] .ende-top .zeile { border-bottom: .15rem solid #222; font-size: 2.6rem; padding: .65rem 0; font-weight: 700; }
-body[data-design="hell"] .ende-top .platz { color: var(--text-leise); }
-body[data-design="hell"] .ende-top .anz { color: var(--text); font-weight: 800; }
-body[data-design="hell"] .ende-top .zeile.erster, body[data-design="hell"] .ende-top .zeile.erster .name,
-body[data-design="hell"] .ende-top .zeile.erster .anz, body[data-design="hell"] .ende-top .zeile.erster .platz { color: var(--akzent); font-weight: 800; }
-
-/* Statistik */
-body[data-design="hell"] table.daten th { color: var(--text-leise); font-weight: 800; border-bottom: .2rem solid #222; }
-body[data-design="hell"] table.daten td { font-weight: 700; }
-body[data-design="hell"] table.daten tbody tr:nth-child(odd) { background: #ECECEA; }
-body[data-design="hell"] table.daten td.null { color: var(--text-leise); }
-body[data-design="hell"] table.daten td.gesamt, body[data-design="hell"] table.daten th.gesamt { color: var(--akzent); font-weight: 800; }
-body[data-design="hell"] table.daten .leise { color: var(--text-leise); font-weight: 700; }
-body[data-design="hell"] .statistik table.daten { font-size: 1.4rem; }
-body[data-design="hell"] .stat-rechts table.daten { font-size: 1.35rem; }
-body[data-design="hell"] .stat-rechts table.daten th, body[data-design="hell"] .stat-rechts table.daten td { padding: .25rem .6rem; }
-body[data-design="hell"] .stat-rechts { gap: .8rem; }
-body[data-design="hell"] .stat-rechts .karte { padding: .7rem 1.2rem .8rem; }
-body[data-design="hell"] .stat-rechts .karte h2 { margin-bottom: .35rem; }
-body[data-design="hell"] .stat-rechts table.daten th, body[data-design="hell"] .stat-rechts table.daten td { padding: .15rem .6rem; }
-body[data-design="hell"] .rekord .rekord-gross { font-size: 2.2rem; line-height: 1.1; }
-body[data-design="hell"] .rekord ol { font-size: 1.25rem; line-height: 1.35; padding-left: 1.3rem; }
-body[data-design="hell"] .rekord p { font-size: 1.2rem; }
-body[data-design="hell"] .rekord ul { font-size: 1.15rem; }
-body[data-design="hell"] .rekord .rekord-gross { color: var(--akzent); font-weight: 800; }
-body[data-design="hell"] .rekord ul { color: var(--text-leise); font-weight: 700; }
-body[data-design="hell"] .rekord b { color: var(--akzent); font-weight: 800; }
-body[data-design="hell"] .rekord p, body[data-design="hell"] .rekord ol { font-weight: 700; }
-
-/* Overlays: volle Flaeche ohne Transparenz und Unschaerfe. Sieg = rot/weiss, Phasenwechsel = weiss/schwarz */
-body[data-design="hell"] .overlay { background: var(--akzent); backdrop-filter: none; }
-body[data-design="hell"] .overlay.wechsel { background: #FFFFFF; }
-body[data-design="hell"] .overlay-karte { background: transparent; border: 0; box-shadow: none; color: #fff; padding: 2rem 4rem; }
-body[data-design="hell"] .overlay-karte .klein { color: #fff; font-weight: 800; font-size: 2.2rem; }
-body[data-design="hell"] .overlay-karte .wer { font-weight: 800; font-size: 8rem; }
-body[data-design="hell"] .overlay-karte .was { color: #fff; font-weight: 800; font-size: 4.2rem; }
-body[data-design="hell"] .overlay-karte .was.sonder { color: #fff; }
-body[data-design="hell"] .overlay-karte .was .icon { font-size: 6rem; --icon-strich: 2.2; }
-body[data-design="hell"] .overlay-karte.wechsel { color: #111; }
-body[data-design="hell"] .overlay-karte.wechsel .klein { color: var(--text-leise); }
-body[data-design="hell"] .overlay-karte.wechsel .wer { color: #111; font-size: 6.2rem; }
-body[data-design="hell"] .overlay-karte.wechsel .weiter { color: var(--akzent); font-weight: 800; font-size: 3.8rem; }
-body[data-design="hell"] .overlay-karte.wechsel .weiter b { font-weight: 800; }
-
+/* ================================================================= Regel-Show */
+.regeln { display: flex; flex-direction: column; min-height: 0; }
+.regel-buehne { position: relative; flex: 1; min-height: 0; }
+.folie { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.6rem; text-align: center;
+  padding: 0 4rem; animation: folie-ein var(--dauer-folie-ein) var(--ease-out) backwards; }
+.folie.geht { animation: folie-aus var(--dauer-folie-aus) var(--ease-out) forwards; pointer-events: none; }
+@keyframes folie-ein { from { opacity: 0; transform: translateX(calc(var(--versatz) * 4)); } to { opacity: 1; transform: none; } }
+@keyframes folie-aus { from { opacity: 1; } to { opacity: 0; } }
+.regel-titel { margin: 0; font-size: 5.4rem; font-weight: 700; line-height: 1.08; letter-spacing: -.03em; max-width: 30ch; text-wrap: balance; overflow-wrap: anywhere; }
+.regel-titel.lang { font-size: 4.4rem; letter-spacing: -.02em; }
+.regel-text { margin: 0; max-width: 65ch; font-size: 2.7rem; font-weight: 600; line-height: 1.35; text-wrap: pretty; white-space: pre-line; overflow-wrap: anywhere; color: var(--text); }
+.regel-text.lang { font-size: 2.2rem; }
+.folie .wurf { --d: 9rem; margin-top: 1.8rem; }
+.regel-leer h1 { margin: 0 0 1rem; font-size: 4rem; font-weight: 700; }
+.regel-leer p { margin: 0; font-size: 2.2rem; color: var(--text-leise); font-weight: 500; max-width: 40ch; }
+/* Fortschrittspunkte: die aktuelle Folie traegt das Wuerfelauge */
+.regel-punkte { display: flex; gap: 1rem; justify-content: center; align-items: center; min-height: 1.4rem; padding-top: .8rem; }
+.regel-punkte .punkt { width: 1.2rem; height: 1.2rem; border-radius: 50%; background: var(--flaeche); border: .2rem solid var(--text-leise); transition: background-color var(--dauer-kachel) var(--ease-out), border-color var(--dauer-kachel) var(--ease-out); }
+.regel-punkte .punkt.an { background: var(--akzent); border-color: var(--akzent); }
 @media (max-aspect-ratio: 3/2) {
-  body[data-design="hell"] .letzter .wer { font-size: 2.5rem; }
-  body[data-design="hell"] .overlay-karte .wer { font-size: 6rem; }
-  body[data-design="hell"] .overlay-karte.wechsel .wer { font-size: 5rem; }
-  body[data-design="hell"] .sonder h1 { font-size: 5.4rem; }
-  body[data-design="hell"] .ende-top .zeile { font-size: 2.1rem; }
+  .regel-titel { font-size: 4.4rem; }
+  .regel-text { font-size: 2.2rem; }
 }
-
-/* Sehr lange Namen (Anhang, nach dem Design "hell" wegen gleicher Spezifitaet) */
-body[data-design="hell"] .kachel .name.sehr-lang { font-size: 1.2rem; }
-body[data-design="hell"] .viele .kachel .name.sehr-lang { font-size: .85rem; }
-body[data-design="hell"] .phasenkopf h2.lang { font-size: 1.8rem; }
-body[data-design="hell"] .overlay-karte .wer.lang { font-size: 5rem; }
-body[data-design="hell"] .overlay-karte .wer.sehr-lang { font-size: 3.6rem; }
-body[data-design="hell"] .overlay-karte .was.lang, body[data-design="hell"] .overlay-karte .weiter.lang { font-size: 2.6rem; }
-body[data-design="hell"] .overlay-karte.wechsel .wer.lang { font-size: 3.8rem; }
-body[data-design="hell"] .overlay-karte.wechsel .wer.sehr-lang { font-size: 2.8rem; }
-@media (max-aspect-ratio: 3/2) {
-  .letzter .wer.lang { font-size: 1.8rem; }
-  body[data-design="hell"] .letzter .wer.lang { font-size: 1.8rem; }
-}
-
-/* Viele Jahre im Design "hell" (gleiche Spezifitaet wie die hell-Regeln, daher nach ihnen) */
-body[data-design="hell"] .statistik table.daten.eng { font-size: 1.15rem; }
-body[data-design="hell"] .statistik table.daten.eng th, body[data-design="hell"] .statistik table.daten.eng td { padding: .2rem .3rem; }
-body[data-design="hell"] .stat-rechts table.daten.eng { font-size: 1.05rem; }
-body[data-design="hell"] .stat-rechts table.daten.eng th, body[data-design="hell"] .stat-rechts table.daten.eng td { padding: .03rem .5rem; line-height: 1.2; }
-body[data-design="hell"] .rekord ul.viele { font-size: 1rem; }
-.letzter .wer.kappe.lang { -webkit-line-clamp: 2; line-clamp: 2; }
-
-body[data-design="hell"] .statistik table.daten.eng th, body[data-design="hell"] .statistik table.daten.eng td { padding: .2rem .15rem; }
-body[data-design="hell"] .statistik table.daten.eng th:first-child, body[data-design="hell"] .statistik table.daten.eng td.name { padding-left: .3rem; }
-body[data-design="hell"] .statistik table.daten.eng th.gesamt, body[data-design="hell"] .statistik table.daten.eng td.gesamt { padding-right: .3rem; }
-/* Viele Jahre: rechte Spalte etwas kompakter, damit alle vier Karten ins Bild passen */
-.statistik.eng .stat-rechts, body[data-design="hell"] .statistik.eng .stat-rechts { gap: .5rem; }
-.statistik.eng .stat-rechts .karte, body[data-design="hell"] .statistik.eng .stat-rechts .karte { padding-top: .5rem; padding-bottom: .55rem; }
-.statistik.eng .stat-rechts table.daten th, .statistik.eng .stat-rechts table.daten td,
-body[data-design="hell"] .statistik.eng .stat-rechts table.daten th, body[data-design="hell"] .statistik.eng .stat-rechts table.daten td { padding-top: 0; padding-bottom: 0; line-height: 1.15; }
-.statistik.eng .rekord ol, body[data-design="hell"] .statistik.eng .rekord ol { font-size: 1.05rem; line-height: 1.2; }
-.statistik.eng .rekord .rekord-gross, body[data-design="hell"] .statistik.eng .rekord .rekord-gross { font-size: 1.8rem; }
-.statistik.eng .rekord p, body[data-design="hell"] .statistik.eng .rekord p { font-size: 1.05rem; }
-
-/* Sonderrunde mit langem Preisnamen: Schrift kleiner, Icon etwas kleiner, nichts laeuft aus dem Bild */
-.sonder h1.lang { font-size: 4rem; }
-.sonder h1.sehr-lang { font-size: 3rem; }
-.sonder h1.lang ~ .gross, .sonder h1.sehr-lang ~ .gross { font-size: 1.8rem; }
-body[data-design="hell"] .sonder h1.lang { font-size: 4.6rem; }
-body[data-design="hell"] .sonder h1.sehr-lang { font-size: 3.4rem; }
-.sonder:has(h1.lang) .sonder-icon .icon, .sonder:has(h1.sehr-lang) .sonder-icon .icon,
-body[data-design="hell"] .sonder:has(h1.lang) .sonder-icon .icon, body[data-design="hell"] .sonder:has(h1.sehr-lang) .sonder-icon .icon { font-size: 9rem; }
-.ende-top .kappe { -webkit-line-clamp: 2; line-clamp: 2; line-height: 1.1; }
-.ende-top .name.lang { font-size: .72em; }
-.kacheln .leer-text { text-align: left; padding: .2rem 0 0; font-size: 1.6rem; }
-/* Viele Jahre: Rekordkarten noch etwas dichter, damit alle Karten ins Bild passen (Namen bleiben zweizeilig) */
-.statistik.eng .stat-rechts .karte h2, body[data-design="hell"] .statistik.eng .stat-rechts .karte h2 { margin-bottom: .15rem; font-size: 1rem; }
-.statistik.eng .stat-rechts table.daten.eng, body[data-design="hell"] .statistik.eng .stat-rechts table.daten.eng { font-size: .9rem; }
-.statistik.eng .stat-rechts table.daten.eng th, .statistik.eng .stat-rechts table.daten.eng td,
-body[data-design="hell"] .statistik.eng .stat-rechts table.daten.eng th, body[data-design="hell"] .statistik.eng .stat-rechts table.daten.eng td { line-height: 1.1; }
-.statistik.eng .rekord ul.viele, body[data-design="hell"] .statistik.eng .rekord ul.viele { font-size: .85rem; line-height: 1.12; margin-top: .2rem; }
-.statistik.eng .rekord ol, body[data-design="hell"] .statistik.eng .rekord ol { font-size: .98rem; line-height: 1.12; margin-top: 0; }
-.statistik.eng .rekord .rekord-gross, body[data-design="hell"] .statistik.eng .rekord .rekord-gross { font-size: 1.6rem; line-height: 1; }
-.statistik.eng .rekord .kappe { line-height: 1.12; }
-body[data-design="hell"] .viele .kachel.leer .name { text-decoration-thickness: .1rem; }
-.rekord-zwei { grid-template-columns: 1.5fr 1fr; }

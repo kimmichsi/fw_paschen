@@ -85,7 +85,7 @@ def main(argv=None) -> None:
             )
             api._beamer_vollbild = False
         # Das Beamer-Fenster hat keine js_api: Python schickt ihm den Zustand, sobald die Seite geladen ist.
-        fenster.events.loaded += lambda *_: api._beamer_aktualisieren()
+        fenster.events.loaded += lambda *_: api._beamer_aktualisieren(bilder_neu=True)
         fenster.events.closed += lambda *_: api._beamer_geschlossen(fenster)
         return fenster
 

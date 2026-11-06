@@ -29,13 +29,13 @@ def _bestand():
     return b, erika, max_, hanna, nina
 
 
-def test_top10_abend():
+def test_top10_nachmittag():
     b, erika, max_, hanna, nina = _bestand()
-    top = st.top10_abend(b, 2025)
+    top = st.top10_nachmittag(b, 2025)
     assert [(t["name"], t["siege"]) for t in top] == [
         ("Max Beispiel", 3), ("Erika Musterfrau", 1), ("Nina Probe", 1),
     ]  # Gleichstand: Nachname Musterfrau < Probe
-    assert st.top10_abend(b, 1999) == []
+    assert st.top10_nachmittag(b, 1999) == []
     json.dumps(top)
 
 
@@ -49,7 +49,7 @@ def test_top10_begrenzt_auf_zehn():
         b.personen.append(p)
         s.siege.append(Sieg(person_id=p.id, preis_id=pr.id))
     b.spiele.append(s)
-    assert len(st.top10_abend(b, 2025)) == 10
+    assert len(st.top10_nachmittag(b, 2025)) == 10
 
 
 def test_siege_person_jahr():
@@ -77,8 +77,8 @@ def test_jahresvergleich():
 def test_rekorde():
     b, *_ = _bestand()
     r = st.rekorde(b)
-    assert [(e["name"], e["jahr"], e["siege"]) for e in r["meiste_siege_abend"]["ewig"]] == [("Max Beispiel", 2025, 3)]
-    assert [(e["jahr"], e["name"], e["siege"]) for e in r["meiste_siege_abend"]["je_jahr"]] == [
+    assert [(e["name"], e["jahr"], e["siege"]) for e in r["meiste_siege_nachmittag"]["ewig"]] == [("Max Beispiel", 2025, 3)]
+    assert [(e["jahr"], e["name"], e["siege"]) for e in r["meiste_siege_nachmittag"]["je_jahr"]] == [
         (2024, "Erika Musterfrau", 2), (2025, "Max Beispiel", 3),
     ]
     assert [(e["name"], e["teilnahmen"]) for e in r["teilnahmen"]] == [
@@ -90,7 +90,7 @@ def test_rekorde():
 
 def test_rekorde_gleichstand_und_leer():
     assert st.rekorde(Datenbestand()) == {
-        "meiste_siege_abend": {"ewig": [], "je_jahr": []},
+        "meiste_siege_nachmittag": {"ewig": [], "je_jahr": []},
         "teilnahmen": [],
         "pechvogel": [],
     }
@@ -98,5 +98,5 @@ def test_rekorde_gleichstand_und_leer():
     # Max bekommt 2024 einen zweiten Sieg -> Gleichstand mit Erika (2); 2025 hat Max 3
     # Rekord ewig bleibt 3; pruefe Gleichstand in Jahr 2024
     b.spiel(2024).siege.append(Sieg(person_id=max_.id, preis_id=b.spiel(2024).preise[0].id))
-    je = st.rekorde(b)["meiste_siege_abend"]["je_jahr"]
+    je = st.rekorde(b)["meiste_siege_nachmittag"]["je_jahr"]
     assert je[0]["siege"] == 2 and je[0]["name"] == "Max Beispiel"  # Name sortiert: Beispiel < Musterfrau

@@ -33,8 +33,8 @@ def _siege_je_person(spiel: Spiel) -> Counter:
     return Counter(s.person_id for s in spiel.siege)
 
 
-def top10_abend(bestand: Datenbestand, jahr: int) -> list[dict]:
-    """Top 10 des Abends: ``[{"person_id", "name", "siege"}]`` absteigend nach Siegen,
+def top10_nachmittag(bestand: Datenbestand, jahr: int) -> list[dict]:
+    """Top 10 des Nachmittags: ``[{"person_id", "name", "siege"}]`` absteigend nach Siegen,
     Gleichstand nach Name. Nur Personen mit mindestens einem Sieg."""
     spiel = bestand.spiel(jahr)
     if spiel is None:
@@ -95,13 +95,13 @@ def jahresvergleich(bestand: Datenbestand) -> list[dict]:
 def rekorde(bestand: Datenbestand) -> dict:
     """Rekorde:
 
-    * ``meiste_siege_abend``: ``{"ewig": [Rekordhalter...], "je_jahr": [Bester je Jahr]}``,
+    * ``meiste_siege_nachmittag``: ``{"ewig": [Rekordhalter...], "je_jahr": [Bester je Jahr]}``,
       Eintraege ``{"jahr", "person_id", "name", "siege"}`` (ewig: alle bei Gleichstand).
     * ``teilnahmen``: Top 10 ``{"person_id", "name", "teilnahmen"}`` (Anzahl Jahre dabei).
     * ``pechvogel``: Top 10 mit meisten Teilnahmen bei 0 Siegen insgesamt,
       ``{"person_id", "name", "teilnahmen"}``.
     """
-    alle_abende = []  # (jahr, pid, siege)
+    alle_nachmittage = []  # (jahr, pid, siege)
     je_jahr = []
     for s in sorted(bestand.spiele, key=lambda x: x.jahr):
         z = _siege_je_person(s)
@@ -110,13 +110,13 @@ def rekorde(bestand: Datenbestand) -> dict:
             for pid, n in z.items()
         ]
         eintraege.sort(key=lambda e: (-e["siege"], _sortname(bestand, e["person_id"])))
-        alle_abende.extend(eintraege)
+        alle_nachmittage.extend(eintraege)
         if eintraege:
             je_jahr.append(eintraege[0])
     ewig = []
-    if alle_abende:
-        maximum = max(e["siege"] for e in alle_abende)
-        ewig = [e for e in alle_abende if e["siege"] == maximum]
+    if alle_nachmittage:
+        maximum = max(e["siege"] for e in alle_nachmittage)
+        ewig = [e for e in alle_nachmittage if e["siege"] == maximum]
         ewig.sort(key=lambda e: (e["jahr"], _sortname(bestand, e["person_id"])))
 
     teilnahmen: Counter = Counter()
@@ -133,7 +133,7 @@ def rekorde(bestand: Datenbestand) -> dict:
         ]
 
     return {
-        "meiste_siege_abend": {"ewig": ewig, "je_jahr": je_jahr},
+        "meiste_siege_nachmittag": {"ewig": ewig, "je_jahr": je_jahr},
         "teilnahmen": top(teilnahmen.keys()),
         "pechvogel": top([pid for pid in teilnahmen if siege_gesamt[pid] == 0]),
     }

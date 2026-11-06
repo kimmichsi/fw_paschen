@@ -9,6 +9,7 @@
 <link rel="icon" type="image/png" href="paschen-symbol.png">
 </head>
 <body data-design="hell">
+<div id="demo-band" class="demo-band" hidden></div>
 <div id="buehne">
   <header class="kopf">
     <div class="titel">Paschen <span id="jahr"></span></div>
@@ -52,12 +53,17 @@
     </section>
     <section class="stat-rechts">
       <div class="karte"><h2>Jahresvergleich</h2><div id="stat-jahre"></div></div>
-      <div class="karte rekord"><h2>Meiste Siege an einem Abend</h2><div id="rek-abend"></div></div>
+      <div class="karte rekord"><h2>Meiste Siege an einem Nachmittag</h2><div id="rek-nachmittag"></div></div>
       <div class="rekord-zwei">
         <div class="karte rekord"><h2>Ewige Teilnahmen</h2><div id="rek-teilnahmen"></div></div>
         <div class="karte rekord"><h2>Pechvogel</h2><div id="rek-pech"></div></div>
       </div>
     </section>
+  </main>
+
+  <main id="ansicht-regeln" class="ansicht regeln" hidden>
+    <div class="regel-buehne" id="regel-buehne"></div>
+    <div class="regel-punkte" id="regel-punkte" aria-hidden="true"></div>
   </main>
 
   <div id="overlay" class="overlay" hidden><div class="overlay-karte" id="overlay-karte"></div></div>

@@ -1,6 +1,6 @@
 # Paschen
 
-Windows-Desktop-Anwendung zur Spielleitung eines Paschen-Spielabends (Würfelspiel mit Preisen).
+Windows-Desktop-Anwendung zur Spielleitung eines Paschen-Spielnachmittags (Würfelspiel mit Preisen).
 Die Spielleitung bedient alles am Laptop, das Publikum sieht den aktuellen Stand auf dem Beamer.
 
 ## Funktionen
@@ -11,16 +11,21 @@ Die Spielleitung bedient alles am Laptop, das Publikum sieht den aktuellen Stand
 - **Spezialpreise und Sonderrunde:** Preise lassen sich als Spezialpreise markieren. Die Sonderrunde kann jederzeit per Klick auf den Spezialpreis gestartet werden (nicht erst nach den Phasen).
 - **Rückgängig:** Eingaben können Schritt für Schritt zurückgenommen werden; nach jedem Eintrag gibt es den Hinweis mit Rückgängig-Knopf.
 - **Nachlegen und Nachtragen:** Preise lassen sich während des Spiels nachlegen (mehr Stück), Teilnehmer nachtragen; neue Personen oder Teams („A / B“) können angelegt werden.
-- **Spielende:** Sind alle Preise vergeben, zeigt der Beamer das Ende mit den Top 10 des Abends.
+- **Spielende:** Sind alle Preise vergeben, zeigt der Beamer das Ende mit den Top 10 des Nachmittags.
 - **Statistik:** Eigene Statistikansicht für Laptop und Beamer.
 - **Beamer-Ansicht:** Im Bedienfenster lässt sich der Beamer zwischen „Spiel“ und „Statistik“ umschalten.
 - **Beamer-Design:** Im Bereich „Beamer“ (Ansicht „Spiel“) wählt man **Hell** (Standard) oder **Dunkel**. „Hell“ ist für lichtschwache Beamer bei eingeschaltetem Raumlicht gedacht: weißer Grund, schwarze Schrift in kräftigen Gewichten, dicke Umrandungen, Feuerwehr-Rot als Akzent, vergebene Preise durchgestrichen und schraffiert statt ausgeblendet. Die Wahl ist eine Geräteeinstellung und wird in der `config.json` gemerkt (nicht in den Spieldaten).
 - **Programmsymbol:** Drei rote Würfel mit gleicher Augenzahl (ein „Pasch“) als Fenster-, Taskleisten- und Programmsymbol.
 - **Beamer-Fenster:** „Beamer auf anderen Bildschirm“ verschiebt das Fenster; „Beamer-Fenster öffnen“ erzeugt es neu, falls es versehentlich geschlossen wurde (es erhält sofort den aktuellen Stand).
+- **Preisbilder:** Zu jedem Preisnamen lässt sich ein Bild (JPG oder PNG, bis 2 MB) hinterlegen. Die Bildbibliothek hängt am Preisnamen und gilt damit für alle Jahre; die Dateien liegen im Datenordner unter `bilder\`. Beim Umbenennen oder Zusammenlegen von Preisnamen zieht das Bild mit.
+- **Jahre verwalten:** Rechtsklick oder „⋯“ an der Jahreszahl öffnet das Spiel dieses Jahres oder löscht es. Vor dem Löschen legt die Anwendung automatisch eine Sicherung an.
+- **Demo-Modus:** Zum Ausprobieren und Üben gibt es zwei Arten: **erfunden** (Beispieldaten) und **Kopie** (eine Kopie der echten Daten). Gearbeitet wird nur in einem eigenen Demo-Ordner; die echten Daten bleiben unberührt, der Datenordner lässt sich im Demo-Modus nicht ändern. Beim Beenden geht es mit den echten Daten weiter.
+- **Regel-Show:** Der Beamer kann Regel-Folien zeigen (Titel, Text, optional drei Würfel). Die Folien laufen in einer Schleife mit einstellbarem Intervall; im Bedienfenster blättert man mit Vor/Zurück. Ein Editor legt Folien an, bearbeitet, löscht und verschiebt sie.
+- **Bereich „Daten“:** Siege nachträglich bearbeiten (Gewinner, Preis, auch aus anderen Jahren) oder löschen, Preisnamen über alle Jahre umbenennen und zusammenführen, Personen bearbeiten und doppelte Personen zusammenführen.
 - **Excel-Import und -Export:** Alte Jahre werden aus einer Excel-Datei übernommen, der Spielstand lässt sich nach Excel exportieren.
 - **Datensicherung:** Jeder Speichervorgang legt vorher ein Backup an (die letzten 20 bleiben erhalten).
 
-## Bedienung am Spielabend
+## Bedienung am Spielnachmittag
 
 1. **Vorbereitung:** Programm starten (`Paschen.exe`), beim ersten Start den Datenordner wählen. Unter „Start“ ein neues Jahr anlegen (übernimmt das Vorjahr), dann in der Vorbereitung Phasen, Preise und Teilnehmer prüfen. Beamer anschließen, bevor das Programm gestartet wird.
 2. **Teilnehmer anmelden:** Eintreffende Teilnehmer in der Vorbereitung oder im Spiel über „Teilnehmer nachtragen“ als anwesend eintragen.
@@ -43,7 +48,7 @@ Die Spielleitung bedient alles am Laptop, das Publikum sieht den aktuellen Stand
 
 Die Oberfläche folgt einheitlichen Bewegungs- und Darstellungsregeln (alles in `ui/css/basis.css`, ohne Bibliotheken, offline):
 
-- **Bedienfenster (60 bis 80 Eintragungen pro Abend):** Eintragungen wirken sofort, ohne verzögernde Animationen. Knöpfe und Kacheln geben beim Drücken leicht nach (`scale(0.97)`, 140 ms; Ausnahme: breite Preiszeilen in der Vorbereitung geben nur auf `.985` nach); Hover nur mit Maus und nie auf grüne (angemeldete) oder gewählte Namenskacheln. Hinweis erscheint in 200 ms und verschwindet in 150 ms, Dialoge blenden in 220 ms ein (zentriert) und in 150 ms aus. Escape schließt Dialoge sofort. Tastatur-Fokus ist sichtbar (`:focus-visible`).
+- **Bedienfenster (60 bis 80 Eintragungen pro Nachmittag):** Eintragungen wirken sofort, ohne verzögernde Animationen. Knöpfe und Kacheln geben beim Drücken leicht nach (`scale(0.97)`, 140 ms; Ausnahme: breite Preiszeilen in der Vorbereitung geben nur auf `.985` nach); Hover nur mit Maus und nie auf grüne (angemeldete) oder gewählte Namenskacheln. Hinweis erscheint in 200 ms und verschwindet in 150 ms, Dialoge blenden in 220 ms ein (zentriert) und in 150 ms aus. Escape schließt Dialoge sofort. Tastatur-Fokus ist sichtbar (`:focus-visible`).
 - **Beamer:** Nur seltene Momente (Ansichtswechsel, Sieg, Phasenwechsel, Sonderrunde, Ende) sind lebendiger: Elemente erscheinen gestaffelt (40 ms Abstand), die Sieg-Karte wächst von 95 % auf 100 % ohne Überschwingen und blendet schneller aus als ein. Der Fortschrittsbalken der Kacheln läuft über `transform`, die Restmenge wechselt mit einem leichten Zahlen-Tick.
 - **Beamer „hell“:** Dicke Ränder, kein Text heller als `#3A3A3A`, nichts über Deckkraft oder Schatten. Der halbtransparente Ring-Schatten statt Rand gilt nur im Bedienfenster.
 - **Bewegung nur über Variablen:** Kurven `--ease-out` / `--ease-in-out` und Dauern `--dauer-*` stehen in `basis.css`; nirgends `transition: all`, nie `ease-in`, nie `scale(0)`. Bei `prefers-reduced-motion` entfallen Versatz, Skalierung und Pulsieren, Ein- und Ausblenden bleibt.

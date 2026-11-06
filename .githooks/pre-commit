@@ -1,7 +1,7 @@
 #!/bin/sh
 # Bricht den Commit ab, wenn Excel- oder Datendateien gestaged sind
 # (das Repository ist oeffentlich).
-verboten=$(git diff --cached --name-only --diff-filter=ACMR | grep -iE '(\.(xlsx|xls|xlsm)$)|(^|/)paschen-daten[^/]*$|\.tmp$|(^|/)backup/')
+verboten=$(git diff --cached --name-only --diff-filter=ACMR | grep -iE '(\.(xlsx|xls|xlsm)$)|(^|/)paschen-daten[^/]*$|\.tmp$|(^|/)(backup|bilder|demo-erfunden|demo-kopie)/')
 if [ -n "$verboten" ]; then
     echo "FEHLER: Diese Dateien duerfen nicht ins oeffentliche Repo:" >&2
     echo "$verboten" >&2

@@ -1,44 +1,78 @@
-/* Gemeinsame Variablen und Grundstile fuer Bedien- und Beamer-Fenster */
-:root {
-  --bg: #0e1218;
-  --flaeche: #171c26;
-  --flaeche-2: #202736;
-  --flaeche-3: #2a3347;
-  --rand: #2d3649;
-  --text: #eef1f6;
-  --text-leise: #9ba6b9;
-  --akzent: #5aa9ff;
-  --akzent-dunkel: #1e4e86;
-  --akzent-text: #07121f;
-  --gold: #f5b942;
-  --gold-dunkel: #5a4210;
-  --gruen: #4cd08a;
-  --rot: #ff6b6b;
-  --radius: 14px;
-  --radius-klein: 9px;
-  --schatten: 0 8px 28px rgba(0, 0, 0, .35);
-  --ring: 0 0 0 1px rgba(255, 255, 255, .09);  /* halbtransparenter Ring statt Vollrand (nur Bedienfenster) */
-  --schrift: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
-  --schrift-titel: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, Arial, sans-serif;
+/* Gestaltung nach unslop von Damir Sokolovsky (@heydamir), CC BY 4.0 */
+/* Gemeinsame Variablen und Grundstile fuer Bedien- und Beamer-Fenster.
+   Richtung: Mannschaftsraum am Silvesternachmittag, Holztisch und Becher, Feuerwehr-Rot.
+   Graphit-Flaechen; Farbe tragen nur die Preisfotos und die roten Wuerfel. Das rote Wuerfelauge (.aug)
+   markiert "aktiv / jetzt dran" und sonst nichts. */
 
-  /* Bewegung (Leitfaden: Easing- und Dauer-Variablen). Nie ease-in, nie scale(0), nur transform/opacity. */
-  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);      /* Standard: Ein-/Ausblenden, Druck-Rueckmeldung */
-  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);  /* Bewegung auf dem Bildschirm */
-  --dauer-druck: 140ms;    /* Knopf gedrueckt (100-160 ms) */
-  --dauer-farbe: 150ms;    /* Hover/Farbwechsel */
-  --dauer-aus: 150ms;      /* Ausblenden ist schneller als Einblenden */
-  --dauer-hinweis: 200ms;  /* Hinweis (Toast) ein */
-  --dauer-modal: 220ms;    /* Dialog ein (200-250 ms) */
-  --dauer-ein: 340ms;      /* Beamer: Ansichtswechsel (seltener Moment) */
-  --dauer-kachel: 300ms;   /* Beamer: Kachel-Zustandswechsel, Fortschrittsbalken */
-  --dauer-overlay: 380ms;  /* Beamer: Sieg-/Phasenwechsel-Karte ein */
-  --dauer-overlay-aus: 180ms; /* Beamer: Overlay aus (schneller als ein) */
-  --dauer-tick: 280ms;     /* Beamer: Zahlenwechsel der Restmenge */
-  --dauer-puls: 3.2s;      /* Beamer: Pulsen des Sonderrunden-Icons (nur dunkel) */
-  --dauer-overlay-bg: 300ms; /* Beamer: Overlay-Hintergrund ein */
-  --overlay-verzug: 80ms;  /* Beamer: Verzoegerung der Overlay-Inhalte */
-  --overlay-stagger: 60ms; /* Beamer: Staffelung der Overlay-Inhalte */
-  --stagger: 40ms;         /* Beamer: Staffelung der Elemente (30-60 ms) */
+@font-face {
+  font-family: "Figtree";
+  src: url("../fonts/Figtree-Variable.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  color-scheme: dark;
+  /* Graphit-Rampe (dunkel) */
+  --tief: #0f0f10;
+  --bg: #141415;
+  --flaeche: #19191b;
+  --flaeche-2: #232325;
+  --flaeche-3: #2d2d30;
+  --rand: rgba(237, 237, 237, .10);        /* Haarlinie */
+  --rand-stark: rgba(237, 237, 237, .22);  /* Auswahl, Felder bei Fokus */
+  --text: #ededed;
+  --text-leise: #a1a1a6;
+  --text-still: #8e8e94;
+  --invers: #ededed;                       /* Hauptknopf: heller Grund, dunkle Schrift */
+  --invers-text: #141415;
+
+  /* Ein Akzent: Feuerwehr-Rot. Als Flaeche (Wuerfel, Wuerfelauge) und als Text in der hellen Variante */
+  --akzent: #C8102E;
+  --akzent-text: #F26B70;
+  --positiv: #4cc38a;
+  --negativ: #F26B70;
+
+  /* Radien: 8 / 12 / 16, verschachtelt = aussen - Innenabstand, mindestens 4 */
+  --r-0: 4px;
+  --r-1: 8px;
+  --r-2: 12px;
+  --r-3: 16px;
+
+  --licht: inset 0 1px 0 rgba(255, 255, 255, .08);  /* weiche Oberkante statt Leuchten */
+  --schatten: 0 8px 24px rgba(0, 0, 0, .4);
+
+  --schrift: "Figtree", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  --schrift-titel: var(--schrift);
+
+  /* Bewegung: eine Kurve, wenige Dauern. Nie ease-in, nie scale(0), nur transform/opacity/Farben. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dauer-schnell: 140ms;     /* Druck, Hover, Ausblenden */
+  --dauer-mittel: 220ms;   /* Hinweis, Dialog, Menue, Zahlenwechsel */
+  --dauer-lang: 340ms;     /* Einblenden seltener Momente im Beamer */
+  --dauer-druck: var(--dauer-schnell);
+  --dauer-farbe: var(--dauer-schnell);
+  --dauer-aus: var(--dauer-schnell);
+  --dauer-kontext: var(--dauer-schnell);
+  --dauer-hinweis: var(--dauer-mittel);
+  --dauer-modal: var(--dauer-mittel);
+  --dauer-tick: var(--dauer-mittel);        /* Beamer: Zahlenwechsel der Restmenge */
+  --dauer-ein: var(--dauer-lang);           /* Beamer: Ansichtswechsel */
+  --dauer-kachel: var(--dauer-lang);        /* Beamer: Kachel-Zustand, Fortschrittsbalken */
+  --dauer-overlay: var(--dauer-lang);       /* Beamer: Sieg-/Phasenwechsel-Karte ein */
+  --dauer-overlay-bg: var(--dauer-mittel);  /* Beamer: Overlay-Hintergrund ein */
+  --dauer-overlay-aus: var(--dauer-schnell);   /* Beamer: Overlay aus */
+  --dauer-folie-ein: var(--dauer-lang);     /* Beamer: Regel-Folie ein */
+  --dauer-folie-aus: var(--dauer-mittel);   /* Beamer: Regel-Folie aus */
+  --dauer-becher: 480ms;                    /* Regel-Show: Becher kippt */
+  --dauer-wurf: 800ms;                      /* Regel-Show: Wuerfel rollen */
+  --wurf-verzug: 160ms;                     /* Regel-Show: Wuerfel starten nach dem Becher */
+  --wurf-stagger: 60ms;                     /* Regel-Show: Abstand zwischen den Wuerfeln */
+  --dauer-reduziert: var(--dauer-mittel);   /* weniger Bewegung: nur Einblenden */
+  --overlay-verzug: 80ms;
+  --overlay-stagger: 60ms;
+  --stagger: 40ms;
   --versatz: .6rem;        /* Startversatz beim Einblenden */
   --skala-ein: .95;        /* Startgroesse beim Einblenden (nie 0) */
 }
@@ -54,61 +88,94 @@ html, body {
   -webkit-font-smoothing: antialiased;
 }
 
-button, input, select { font: inherit; color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 h1, h2, h3 { text-wrap: balance; }
-h1 { letter-spacing: -0.02em; }
 p { text-wrap: pretty; }
-:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
-input:focus-visible, select:focus-visible { outline-offset: -1px; }
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offset: -1px; }
 [hidden] { display: none !important; }
 
-/* Icons (Inline-SVG aus icons.js) */
+/* Icons (Inline-SVG aus icons.js und shared.js) */
 .icon { display: inline-flex; width: 1em; height: 1em; flex: none; }
 .icon svg { width: 100%; height: 100%; display: block; }
+.icon svg { stroke-width: var(--icon-strich, 1.5); }
+
+/* Das Wuerfelauge: einzige Markierung fuer "aktiv / jetzt dran" */
+.aug { display: inline-block; width: .5em; height: .5em; border-radius: 50%; background: var(--akzent); flex: none; }
 
 .leise { color: var(--text-leise); }
-.gold { color: var(--gold); }
 .tabelle-zahl { font-variant-numeric: tabular-nums; }
 
 /* Namen: nie ueber den Rand, lange Namen umbrechen oder nach 2 Zeilen kuerzen (title zeigt den ganzen Namen) */
 .kappe { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; min-width: 0; }
 .kappe.drei { -webkit-line-clamp: 3; line-clamp: 3; }
 .kappe.eine { -webkit-line-clamp: 1; line-clamp: 1; }
-.leer-text { color: var(--text-leise); padding: .4rem 0; }
+.leer-text { color: var(--text-leise); padding: 8px 0; margin: 0; }
 
 /* Tabellen (Statistik, in beiden Fenstern) */
 table.daten { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-table.daten th, table.daten td { padding: .45em .7em; text-align: right; white-space: nowrap; }
+table.daten th, table.daten td { padding: 8px 12px; text-align: right; white-space: nowrap; }
 table.daten th:first-child, table.daten td:first-child { text-align: left; }
-table.daten th { color: var(--text-leise); font-weight: 600; font-size: .85em; border-bottom: 1px solid var(--rand); }
-table.daten tbody tr:nth-child(odd) { background: rgba(255, 255, 255, .025); }
+table.daten th { color: var(--text-leise); font-weight: 500; font-size: .9em; border-bottom: 1px solid var(--rand); }
+table.daten tbody td { border-bottom: 1px solid var(--rand); }
+table.daten tbody tr:last-child td { border-bottom: 0; }
 table.daten td.name { text-align: left; white-space: normal; max-width: 26em; min-width: 11em; }
-table.daten.eng th, table.daten.eng td { padding-left: .4em; padding-right: .4em; }
-.name-zelle { display: flex; gap: .35em; align-items: baseline; min-width: 0; }
-.name-zelle .nr { flex: none; color: var(--text-leise); min-width: 1.9em; }
-table.daten td.null { color: var(--text-leise); }
-table.daten td.gesamt, table.daten th.gesamt { font-weight: 700; color: var(--akzent); }
+table.daten.eng th, table.daten.eng td { padding-left: 4px; padding-right: 4px; }
+.name-zelle { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.name-zelle .nr { flex: none; color: var(--text-leise); min-width: 2em; }
+table.daten td.null { color: var(--text-still); }
+table.daten td.gesamt, table.daten th.gesamt { font-weight: 600; color: var(--text); }
 table.daten td.platz { text-align: left; color: var(--text-leise); width: 2.2em; }
 
-/* Weniger Bewegung: keine Verschiebungen/Skalierungen und kein Dauerpulsieren; Ein-/Ausblenden und Farbwechsel bleiben */
+/* Weniger Bewegung: keine Verschiebungen/Skalierungen; Ein-/Ausblenden und Farbwechsel bleiben */
 @media (prefers-reduced-motion: reduce) {
   :root { --versatz: 0rem; --skala-ein: 1; }
-  .balken i, .sonder-icon .icon { transition: none !important; animation: none !important; }
+  .balken i { transition: none !important; }
   .knopf:active, .name-kachel:active, .preis-kachel:active, .nav-knopf:active, .segment button:active,
-  .spezial-knopf:active, .jahr-kachel:active, .preis-zeile:active, .icon-wahl button:active { transform: none !important; }
+  .spezial-knopf:active, .jahr-kachel:active, .preis-zeile:active, .icon-wahl button:active, .rg-titel:active, .jahr-mehr:active { transform: none !important; }
 }
 
 /* Rekord-Listen: Name wird gekuerzt, Zahl bleibt immer sichtbar */
 .rekord ol { list-style: none; counter-reset: z; padding-left: 0 !important; }
-.rekord ol li { display: flex; align-items: flex-start; gap: .45em; counter-increment: z; }
-.rekord ol li::before { content: counter(z) "."; flex: none; min-width: 1.5em; }
+.rekord ol li { display: flex; align-items: flex-start; gap: 8px; counter-increment: z; }
+.rekord ol li::before { content: counter(z) "."; flex: none; min-width: 1.5em; color: var(--text-leise); font-variant-numeric: tabular-nums; }
 .rekord ol li .kappe { flex: 1 1 auto; }
 .rekord ol li b { flex: none; white-space: nowrap; }
-.rekord ul.je-jahr li { display: flex; align-items: flex-start; gap: .4em; break-inside: avoid; }
+.rekord ul.je-jahr li { display: flex; align-items: flex-start; gap: 8px; break-inside: avoid; }
 .rekord ul.je-jahr li .kappe { flex: 1 1 auto; }
 .rekord ul.je-jahr li b, .rekord ul.je-jahr li .anz { flex: none; white-space: nowrap; }
 
 /* Rekordkarten: Woerter nur im Notfall mitten im Wort brechen */
 .rekord li, .rekord p, .rekord .kappe { overflow-wrap: break-word; }
-.rekord .unterzeile { margin: -.2rem 0 .3rem !important; font-size: .85em !important; color: var(--text-leise); font-weight: 600; }
+.rekord .unterzeile { margin: 0 0 4px !important; font-size: .9em !important; color: var(--text-leise); font-weight: 500; }
+
+/* Preisbild statt Icon: gleiche Quadratgroesse wie das Icon (Schriftgroesse des Elternelements) */
+.bild { display: inline-block; width: 1em; height: 1em; flex: none; border-radius: var(--r-1); overflow: hidden; background: var(--flaeche-3); box-shadow: 0 0 0 1px var(--rand); }
+.bild.mini { border-radius: var(--r-0); }
+.bild img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Wuerfel und Becher (Regel-Show; Farben ueber Variablen, "hell" ueberschreibt sie in beamer.css).
+   Die roten Wuerfel sind neben den Preisfotos der einzige farbige Moment. */
+:root { --w-fuell: #C8102E; --w-rand: #ededed; --w-auge: #FFFFFF; --b-fuell: #3a3a3d; --b-rand: #ededed; --b-band: #C8102E; --b-mund: #0f0f10; --w-dicke: 4; }
+.wurf { --d: 9rem; display: flex; align-items: center; justify-content: center; gap: calc(var(--d) * .22); }
+.becher { width: calc(var(--d) * .95); height: calc(var(--d) * 1.19); margin-left: calc(var(--d) * .75); margin-right: calc(var(--d) * .1); flex: none;
+  transform: rotate(96deg); transform-origin: 50% 12%; animation: becher-kipp var(--dauer-becher) var(--ease-out) backwards; }
+.becher svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.wuerfel-reihe { display: flex; gap: calc(var(--d) * .22); }
+.wuerfel-wurf { width: var(--d); height: var(--d); transform: rotate(var(--rot, 0deg)); animation: wurf-rollen var(--dauer-wurf) var(--ease-out) backwards; animation-delay: calc(var(--wurf-verzug) + var(--i, 0) * var(--wurf-stagger)); }
+.wuerfel-wurf svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.w-koerper { fill: var(--w-fuell); stroke: var(--w-rand); stroke-width: var(--w-dicke); }
+.w-auge { fill: var(--w-auge); }
+.b-koerper { fill: var(--b-fuell); stroke: var(--b-rand); stroke-width: var(--w-dicke); stroke-linejoin: round; }
+.b-band { fill: var(--b-band); }
+.b-mund { fill: var(--b-mund); stroke: var(--b-rand); stroke-width: var(--w-dicke); }
+/* Nur der Ausgangszustand steht in den Keyframes; der Endzustand (gekippter Becher, gelandete Wuerfel) ist die Grundstellung */
+@keyframes becher-kipp { from { transform: rotate(0deg); } }
+@keyframes wurf-rollen { from { opacity: 0; transform: translate(calc(var(--d) * -2.3), calc(var(--d) * -.7)) rotate(calc(var(--rot, 0deg) - 540deg)); } }
+@keyframes nur-ein { from { opacity: 0; } }
+.wurf.still .becher, .wurf.still .wuerfel-wurf { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .becher { animation: none; }
+  .wuerfel-wurf { animation: nur-ein var(--dauer-reduziert) var(--ease-out) backwards; animation-delay: 0ms; }
+}

@@ -4,6 +4,9 @@
 *.xlsm
 paschen-daten*.json
 backup/
+bilder/
+demo-erfunden/
+demo-kopie/
 
 # Build
 dist/

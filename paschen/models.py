@@ -19,7 +19,30 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Optional
 
-VERSION = 1
+VERSION = 2
+
+STANDARD_INTERVALL_S = 12
+
+
+def name_norm(name) -> str:
+    """Normalisierter Preisname (Schluessel fuer Bilder/Zusammenlegen): strip, lower, Mehrfach-Leerzeichen zu einem."""
+    return " ".join(str(name or "").split()).lower()
+
+
+def standard_regeln() -> list:
+    """Regel-Folien nach der Spielanleitung des Vereins (vom Nutzer bereitgestellt)."""
+    folien = [
+        ("Paschen", "Gespielt wird mit 3 Würfeln und einem Würfelbecher.\nJede Runde hat genau einen Gewinner.", [3, 5, 2]),
+        ("Der Startspieler legt vor", "Er würfelt mit allen drei Würfeln unter dem Becher, bis zu dreimal, und darf nach jedem Wurf ansagen.\nDie Zielvorgabe lautet zum Beispiel „Höher als 15!“ oder „Tiefer als 5!“.", [6, 5, 4]),
+        ("Die anderen würfeln reihum", "Mit allen drei Würfeln – höchstens so oft, wie der Startspieler vor seiner Ansage gewürfelt hat.\nWer möchte, darf früher aufhören.", None),
+        ("Gezählt wird die Augensumme", "Bei „Höher“ gewinnt das höchste Ergebnis über der Vorgabe, bei „Tiefer“ das niedrigste darunter.\nWer die Vorgabe nicht erfüllt, wird nicht gewertet.", [6, 6, 5]),
+        ("Auch der Startspieler kann gewinnen", "Nach seiner Ansage würfelt er nicht mehr.\nEr gewinnt, wenn niemand seine Vorgabe übertrifft beziehungsweise unterbietet.", None),
+        ("Drei Einsen schlagen alles", "3 × 1 ist immer die beste Kombination –\nsogar besser als 3 × 6 bei „Höher“.", [1, 1, 1]),
+        ("Gleichstand? Dann wird gestochen", "Nur die Spieler mit dem gleichen besten Ergebnis stechen. Wer die Gewinnerzahl zuerst erreicht hat, beginnt und gibt eine neue Vorgabe vor.\nGestochen wird, bis es einen eindeutigen Gewinner gibt.", None),
+        ("Wer fängt an?", "Die erste Runde beginnt der jüngste Spieler.\nDanach beginnt jeweils der Spieler rechts vom bisherigen Startspieler.", None),
+        ("Der Gewinner wählt", "Nach jeder Runde sucht sich der Gewinner einen der noch verfügbaren Preise aus – hier auf dem Beamer zu sehen.", None),
+    ]
+    return [{"id": neue_id(), "titel": ti, "text": tx, "wuerfel": list(w) if w else None} for ti, tx, w in folien]
 
 
 def neue_id() -> str:
@@ -128,9 +151,11 @@ class Sieg:
     zeit: Optional[str] = None
     sonderrunde: bool = False
     importiert: bool = False
+    id: str = field(default_factory=neue_id)
 
     def to_dict(self) -> dict:
         return {
+            "id": self.id,
             "nr": self.nr,
             "zeit": self.zeit,
             "person_id": self.person_id,
@@ -142,6 +167,7 @@ class Sieg:
     @classmethod
     def from_dict(cls, d: dict) -> "Sieg":
         return cls(
+            id=d.get("id") or neue_id(),  # Migration v1 -> v2: fehlende IDs ergaenzen
             nr=d.get("nr"),
             zeit=d.get("zeit"),
             person_id=d["person_id"],
@@ -153,7 +179,7 @@ class Sieg:
 
 @dataclass
 class Spiel:
-    """Ein Spielabend (genau eines pro Jahr)."""
+    """Ein Spiel (genau eines pro Jahr, an Silvester am Nachmittag)."""
 
     jahr: int
     datum: Optional[str] = None
@@ -207,6 +233,11 @@ class Datenbestand:
     version: int = VERSION
     personen: list[Person] = field(default_factory=list)
     spiele: list[Spiel] = field(default_factory=list)
+    # Regel-Show (global, fuer alle Jahre): [{id, titel, text, wuerfel: [a,b,c] | None}]
+    regeln: list = field(default_factory=standard_regeln)
+    regeln_intervall_s: int = STANDARD_INTERVALL_S
+    # Preisbilder: {name_norm: dateiname im Unterordner "bilder"}
+    bilder: dict = field(default_factory=dict)
 
     # --- Hilfen -------------------------------------------------------
     def spiel(self, jahr: int) -> Optional[Spiel]:
@@ -239,14 +270,30 @@ class Datenbestand:
             "version": self.version,
             "personen": [p.to_dict() for p in self.personen],
             "spiele": [s.to_dict() for s in self.spiele],
+            "regeln": [dict(r) for r in self.regeln],
+            "regeln_intervall_s": self.regeln_intervall_s,
+            "bilder": dict(self.bilder),
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> "Datenbestand":
+        """Laedt auch aeltere Staende (v1): Sieg-IDs, Standard-Regeln und leere Bildzuordnung werden ergaenzt."""
+        regeln = d["regeln"] if isinstance(d.get("regeln"), list) else standard_regeln()
         return cls(
-            version=int(d.get("version", VERSION)),
+            version=VERSION,
             personen=[Person.from_dict(x) for x in d.get("personen", [])],
             spiele=[Spiel.from_dict(x) for x in d.get("spiele", [])],
+            regeln=[
+                {
+                    "id": r.get("id") or neue_id(),
+                    "titel": r.get("titel", ""),
+                    "text": r.get("text", ""),
+                    "wuerfel": r.get("wuerfel"),
+                }
+                for r in regeln
+            ],
+            regeln_intervall_s=int(d.get("regeln_intervall_s") or STANDARD_INTERVALL_S),
+            bilder=dict(d.get("bilder") or {}),
         )
 
     def to_json(self) -> str:

@@ -10,20 +10,25 @@
 </head>
 <body>
 <div id="app">
+  <div id="demo-banner" class="demo-banner" role="status" hidden></div>
   <nav id="nav" aria-label="Bereiche">
     <div class="marke">Paschen<span id="nav-jahr"></span></div>
     <button class="nav-knopf" data-act="ansicht" data-ansicht="start">Start</button>
     <button class="nav-knopf" data-act="ansicht" data-ansicht="vorbereitung">Vorbereitung</button>
     <button class="nav-knopf" data-act="ansicht" data-ansicht="spiel">Spiel</button>
     <button class="nav-knopf" data-act="ansicht" data-ansicht="statistik">Statistik</button>
+    <button class="nav-knopf" data-act="ansicht" data-ansicht="regeln">Regeln</button>
+    <button class="nav-knopf" data-act="ansicht" data-ansicht="daten">Daten</button>
     <button class="nav-knopf" data-act="ansicht" data-ansicht="excel">Excel</button>
     <div class="nav-fuss">
       <div class="klein leise">Beamer zeigt</div>
-      <div class="segment" id="nav-beamer">
+      <div class="segment senkrecht" id="nav-beamer">
         <button data-act="beamer-ansicht" data-wert="spiel">Spiel</button>
         <button data-act="beamer-ansicht" data-wert="statistik">Statistik</button>
+        <button data-act="beamer-ansicht" data-wert="regeln">Regeln</button>
       </div>
-      <div id="demo-hinweis" class="demo-hinweis" hidden>Demo-Modus<br>(erfundene Daten)</div>
+      <button class="knopf klein voll-breit" id="demo-schalter" data-act="demo-dialog">Demo-Modus …</button>
+      <p id="demo-hinweis" class="demo-hinweis" hidden>Vorschau im Browser mit erfundenen Daten</p>
     </div>
   </nav>
 
@@ -33,7 +38,7 @@
       <h1>Start</h1>
       <div class="karte">
         <h2>Datenordner</h2>
-        <p id="start-ordner-text" class="leise"></p>
+        <p id="start-ordner-text" class="leise start-ordner"></p>
         <button class="knopf" data-act="ordner-waehlen" id="start-ordner-knopf">Ordner wählen …</button>
       </div>
       <div class="karte" id="start-spiele-karte">
@@ -43,7 +48,7 @@
           <label>Neues Spiel für das Jahr <input type="number" id="neu-jahr" min="1900" max="2200"></label>
           <button class="knopf primaer" data-act="neues-spiel">Neues Spiel anlegen</button>
         </div>
-        <p class="klein leise">Phasen, Preise und Teilnehmer werden vom Vorjahr kopiert und können danach angepasst werden.</p>
+        <p class="klein leise">Phasen, Preise und Teilnehmer werden vom Vorjahr kopiert und können danach angepasst werden</p>
       </div>
     </section>
 
@@ -68,7 +73,7 @@
         <div class="spalte">
           <div class="karte">
             <div class="kopfzeile"><h2>Teilnehmer</h2><span class="zaehler" id="vb-zaehler"></span></div>
-            <input type="search" id="vb-suche" class="suche" placeholder="Name suchen …" autocomplete="off">
+            <input type="search" id="vb-suche" class="suche" placeholder="Name suchen" autocomplete="off">
             <div id="vb-personen" class="namen"></div>
           </div>
           <div class="karte">
@@ -89,7 +94,7 @@
       <div class="spiel-spalte">
         <div class="spalten-kopf">
           <h2 id="sp-titel-wer">1 · Wer hat gewonnen?</h2>
-          <input type="search" id="sp-suche" class="suche" placeholder="Suchen …" autocomplete="off">
+          <input type="search" id="sp-suche" class="suche" placeholder="Suchen" autocomplete="off">
         </div>
         <div id="sp-namen" class="namen gross"></div>
       </div>
@@ -107,6 +112,7 @@
           <div class="segment gross" id="sp-beamer">
             <button data-act="beamer-ansicht" data-wert="spiel">Spiel</button>
             <button data-act="beamer-ansicht" data-wert="statistik">Statistik</button>
+            <button data-act="beamer-ansicht" data-wert="regeln">Regeln</button>
           </div>
           <div class="klein leise segment-titel">Design</div>
           <div class="segment gross" id="sp-design">
@@ -137,11 +143,56 @@
         <div class="karte"><h2>Ewige Bestenliste</h2><div id="st-liste" class="scroll"></div></div>
         <div class="spalte">
           <div class="karte"><h2>Jahresvergleich</h2><div id="st-jahre"></div></div>
-          <div class="karte rekord"><h2>Meiste Siege an einem Abend</h2><div id="st-abend"></div></div>
+          <div class="karte rekord"><h2>Meiste Siege an einem Nachmittag</h2><div id="st-nachmittag"></div></div>
           <div class="karte rekord"><h2>Ewige Teilnahmen</h2><div id="st-teiln"></div></div>
           <div class="karte rekord"><h2>Pechvogel</h2><div id="st-pech"></div></div>
         </div>
       </div>
+    </section>
+
+    <!-- REGELN -->
+    <section id="ansicht-regeln" class="ansicht" hidden>
+      <h1>Regeln</h1>
+      <div class="zwei-spalten">
+        <div class="spalte">
+          <div class="karte">
+            <div class="kopfzeile"><h2>Folien</h2><button class="knopf primaer" data-act="regel-neu">Folie hinzufügen</button></div>
+            <div id="rg-liste" class="rg-liste"></div>
+          </div>
+          <div class="karte">
+            <h2>Ablauf</h2>
+            <label class="feld-inline">Jede Folie bleibt <input type="number" id="rg-intervall" min="5" max="120" step="1"> Sekunden</label>
+            <p class="klein leise">Auf dem Beamer laufen die Folien automatisch nacheinander in einer Schleife (5 bis 120 Sekunden).</p>
+          </div>
+        </div>
+        <div class="spalte">
+          <div class="karte">
+            <h2>Vorschau <span class="leise" id="rg-vorschau-nr"></span></h2>
+            <div id="rg-vorschau" class="rg-vorschau"></div>
+          </div>
+          <div class="karte">
+            <h2>Beamer</h2>
+            <button class="knopf voll primaer" data-act="regeln-zeigen">Regeln auf Beamer zeigen</button>
+            <div class="rg-steuerung">
+              <button class="knopf" data-act="regel-zurueck"><span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>Zurück</button>
+              <button class="knopf" data-act="regel-vor">Weiter<span class="icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span></button>
+            </div>
+            <button class="knopf voll" data-act="spiel-starten">Spiel starten</button>
+            <p class="klein leise">„Spiel starten“ schaltet den Beamer zurück auf die Spielansicht</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DATEN -->
+    <section id="ansicht-daten" class="ansicht" hidden>
+      <h1>Daten</h1>
+      <div class="reiter" role="tablist" id="da-reiter">
+        <button role="tab" data-act="daten-reiter" data-reiter="siege">Siege</button>
+        <button role="tab" data-act="daten-reiter" data-reiter="preisnamen">Preisnamen</button>
+        <button role="tab" data-act="daten-reiter" data-reiter="personen">Personen</button>
+      </div>
+      <div class="karte" id="da-inhalt"></div>
     </section>
 
     <!-- EXCEL -->
@@ -163,11 +214,13 @@
 </div>
 
 <div id="modal" class="modal" hidden><div class="modal-karte" id="modal-karte"></div></div>
+<div id="kontext" class="kontext" role="menu" hidden></div>
 <div id="toast" class="toast" hidden></div>
 
 <script src="js/icons.js"></script>
 <script src="js/shared.js"></script>
 <script src="js/mock.js"></script>
+<script src="js/control-ext.js"></script>
 <script src="js/control.js"></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-"""Zeichnet das Programmsymbol (Wuerfel-Pasch in Feuerwehr-Rot) mit Pillow.
+"""Zeichnet das Programmsymbol (drei Wuerfel in Feuerwehr-Rot, alle zeigen eine 1) mit Pillow.
 
 Aufruf aus dem Repo-Root:  python tools/symbol_bauen.py
 Erzeugt assets/paschen.ico (16 bis 256 px, je Groesse eine passende Variante),
@@ -25,20 +25,20 @@ GROESSEN = [16, 20, 24, 32, 40, 48, 64, 128, 256]
 SS = 8  # Ueberabtastung
 
 # Wuerfel je Variante: (x, y, Seite) in Einheiten der Bildbreite; hinten -> vorn
-DREI = [(0.02 + i * 0.20, 0.02 + i * 0.20, 0.56) for i in range(3)]
-ZWEI = [(0.05, 0.05, 0.60), (0.35, 0.35, 0.60)]
+DREI = [(0.01 + i * 0.29, 0.01 + i * 0.29, 0.41) for i in range(3)]
+ZWEI = [(0.04, 0.04, 0.54), (0.42, 0.42, 0.54)]
 EINS = [(0.04, 0.04, 0.92)]
-# Fuenf Augen als Anteil der Wuerfelseite
-AUGEN = [(0.27, 0.27), (0.73, 0.27), (0.5, 0.5), (0.27, 0.73), (0.73, 0.73)]
+# Eine Eins: ein Augenpunkt mittig (Anteil der Wuerfelseite)
+AUGEN = [(0.5, 0.5)]
 
 
 def variante(groesse: int):
     """Liefert (Wuerfelliste, Kantenstaerke, Augenradius-Anteil) fuer die Pixelgroesse."""
     if groesse <= 20:
-        return EINS, 0.06, 0.105
+        return EINS, 0.06, 0.24
     if groesse <= 24:
-        return ZWEI, 0.045, 0.095
-    return DREI, 0.04, 0.082
+        return ZWEI, 0.05, 0.2
+    return DREI, 0.05, 0.19
 
 
 def geometrie(wuerfel, kante, augen_r):
@@ -92,7 +92,7 @@ def ico_schreiben(pfad: Path, bilder: list) -> None:
 def svg_bauen() -> str:
     wuerfel, kante, augen_r = variante(256)
     teile = ['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">',
-             "  <title>Paschen - Wuerfel-Pasch</title>"]
+             "  <title>Paschen - drei Einsen</title>"]
     for w in geometrie(wuerfel, kante, augen_r):
         for farbe, schluessel in (("#8E0B20", "schatten"), ("#C8102E", "flaeche")):
             x, y, bx, by, r = w[schluessel]
@@ -114,5 +114,27 @@ def main() -> None:
     print("Symbol geschrieben:", ASSETS / "paschen.ico")
 
 
+
+
+def vorschau(pfad: Path) -> None:
+    """Vorschau-PNG aller Groessen (Hell und Dunkel nebeneinander, 4-fach vergroessert)."""
+    zeilen = []
+    for hintergrund in ((255, 255, 255, 255), (30, 34, 40, 255)):
+        reihe = Image.new("RGBA", (sum(g * 4 + 16 for g in GROESSEN[:7]), 280), hintergrund)
+        x = 8
+        for g in GROESSEN[:7]:
+            reihe.alpha_composite(zeichne(g).resize((g * 4, g * 4), Image.NEAREST), (x, 8))
+            x += g * 4 + 16
+        zeilen.append(reihe)
+    gesamt = Image.new("RGBA", (zeilen[0].width, 560))
+    gesamt.paste(zeilen[0], (0, 0))
+    gesamt.paste(zeilen[1], (0, 280))
+    pfad.parent.mkdir(parents=True, exist_ok=True)
+    gesamt.save(pfad)
+
+
 if __name__ == "__main__":
     main()
+    import sys
+    if len(sys.argv) > 1:
+        vorschau(Path(sys.argv[1]))

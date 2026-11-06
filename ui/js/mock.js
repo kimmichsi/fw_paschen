@@ -9,7 +9,21 @@
   const VOR = "Fridolin Ottilie Kunigunde Balduin Hermine Eberhard Waltraud Leopold Gundula Theobald Rosalinde Adelbert Mechthild Wendelin Hildegunde Kasimir Brunhilde Ansgar Irmtraud Volkmar Gerlinde Radegund Isidor Walburga Humbert Thusnelda Lambert Sieglinde Quirin".split(" ");
   const NACH = "Musterfrau Beispiel Probe Testmann Demo Platzhalter Vorlage Exempel Schablone Attrappe Modell Stichprobe Fiktiv Erfunden Beleg Entwurf Skizze Dummy Zufall Rohling Prototyp Kopie Nachbau Probant Testfall Stellvertreter Mustermann Fallbeispiel Versuch Muster".split(" ");
 
-  const D = { ordner: "C:\\Demo\\Paschen-Daten", personen: [], spiele: [], jahr: 2025, ansicht: "spiel", design: (/[?&]design=dunkel(&|$)/.test(location.search) ? "dunkel" : "hell"), sonderrunde: null, ereignis: null, ez: 0 };
+  const D = { ordner: "C:\\Demo\\Paschen-Daten", personen: [], spiele: [], jahr: 2025, ansicht: "spiel", design: (/[?&]design=dunkel(&|$)/.test(location.search) ? "dunkel" : "hell"), sonderrunde: null, ereignis: null, ez: 0,
+    demo: { aktiv: /[?&]demoband(&|=|$)/.test(location.search), art: "erfunden" }, bilder: {}, bilder_version: 1, bilder_gepostet: 0,
+    regeln: [], regeln_intervall: 12, regel_index: 0, regel_nonce: 1 };
+  D.regeln = [
+    { id: "r1", titel: "Paschen", text: "Gespielt wird mit 3 Würfeln und einem Würfelbecher.\nJede Runde hat genau einen Gewinner.", wuerfel: [3, 5, 2] },
+    { id: "r2", titel: "Der Startspieler legt vor", text: "Er würfelt mit allen drei Würfeln unter dem Becher, bis zu dreimal, und darf nach jedem Wurf ansagen.\nDie Zielvorgabe lautet zum Beispiel „Höher als 15!“ oder „Tiefer als 5!“.", wuerfel: [6, 5, 4] },
+    { id: "r3", titel: "Die anderen würfeln reihum", text: "Mit allen drei Würfeln – höchstens so oft, wie der Startspieler vor seiner Ansage gewürfelt hat.\nWer möchte, darf früher aufhören.", wuerfel: null },
+    { id: "r4", titel: "Gezählt wird die Augensumme", text: "Bei „Höher“ gewinnt das höchste Ergebnis über der Vorgabe, bei „Tiefer“ das niedrigste darunter.\nWer die Vorgabe nicht erfüllt, wird nicht gewertet.", wuerfel: [6, 6, 5] },
+    { id: "r5", titel: "Auch der Startspieler kann gewinnen", text: "Nach seiner Ansage würfelt er nicht mehr.\nEr gewinnt, wenn niemand seine Vorgabe übertrifft beziehungsweise unterbietet.", wuerfel: null },
+    { id: "r6", titel: "Drei Einsen schlagen alles", text: "3 × 1 ist immer die beste Kombination –\nsogar besser als 3 × 6 bei „Höher“.", wuerfel: [1, 1, 1] },
+    { id: "r7", titel: "Gleichstand? Dann wird gestochen", text: "Nur die Spieler mit dem gleichen besten Ergebnis stechen. Wer die Gewinnerzahl zuerst erreicht hat, beginnt und gibt eine neue Vorgabe vor.\nGestochen wird, bis es einen eindeutigen Gewinner gibt.", wuerfel: null },
+    { id: "r8", titel: "Wer fängt an?", text: "Die erste Runde beginnt der jüngste Spieler.\nDanach beginnt jeweils der Spieler rechts vom bisherigen Startspieler.", wuerfel: null },
+    { id: "r9", titel: "Der Gewinner wählt", text: "Nach jeder Runde sucht sich der Gewinner einen der noch verfügbaren Preise aus – hier auf dem Beamer zu sehen.", wuerfel: null },
+  ];
+  { const m = /[?&]folie=(\d+)/.exec(location.search); if (m) D.regel_index = +m[1]; }
 
   function aufbauen() {
     for (let i = 0; i < 30; i++) {
@@ -29,7 +43,7 @@
       const siege = [];
       for (let i = 0; i < menge; i++) {
         const pid = ids[Math.floor(Math.pow(r(), 1.6) * ids.length)];
-        siege.push({ nr: i + 1, person_id: pid, preis_id: "alt" + jahr, sonderrunde: false, importiert: true });
+        siege.push({ nr: null, person_id: pid, preis_id: "alt" + jahr, sonderrunde: false, importiert: true });
       }
       D.spiele.push({ jahr, datum: null, phasen: [], preise: [{ id: "alt" + jahr, name: "Preise", icon: "geschenk", menge, phase_id: null, spezial: false }], anwesende_ids: ids, siege });
     });
@@ -97,7 +111,7 @@
       const ids = D.personen.map((p) => p.id).sort(() => r() - 0.5).slice(0, n);
       const menge = 90 + Math.floor(r() * 80);
       const siege = [];
-      for (let i = 0; i < menge; i++) siege.push({ nr: i + 1, person_id: ids[Math.floor(Math.pow(r(), 1.6) * ids.length)], preis_id: "alt" + jahr, sonderrunde: false, importiert: true });
+      for (let i = 0; i < menge; i++) siege.push({ nr: null, person_id: ids[Math.floor(Math.pow(r(), 1.6) * ids.length)], preis_id: "alt" + jahr, sonderrunde: false, importiert: true });
       D.spiele.push({ jahr, datum: null, phasen: [], preise: [{ id: "alt" + jahr, name: "Preise", icon: "geschenk", menge, phase_id: null, spezial: false }], anwesende_ids: ids, siege });
     }
     const p1 = { id: "ph1", name: "Phase 1 – Wurst, Teigwaren und andere Dauerwaren aus dem Vereinsvorrat", reihenfolge: 1 };
@@ -130,6 +144,29 @@
   aufbauen();
   if (EXTREM) aufbauenExtrem(EXTREM_LEER);
 
+  // Beispielbilder (per Canvas erzeugte Farbflaechen und Muster, keine Fremdbilder)
+  function bildErzeugen(art) {
+    const c = document.createElement("canvas"); c.width = 240; c.height = 240;
+    const g = c.getContext("2d");
+    const farben = { ringwurst: ["#B5472E", "#F0C9A8"], honig: ["#E0A020", "#FFF0B8"], tasse: ["#2F6DB5", "#DCEBFA"], pokal: ["#3F8F5A", "#E2F3E8"] }[art];
+    g.fillStyle = farben[1]; g.fillRect(0, 0, 240, 240);
+    g.fillStyle = farben[0];
+    if (art === "ringwurst") { for (let i = -240; i < 240; i += 44) { g.beginPath(); g.moveTo(i, 240); g.lineTo(i + 30, 240); g.lineTo(i + 270, 0); g.lineTo(i + 240, 0); g.fill(); } }
+    if (art === "honig") { for (let y = 0; y < 5; y++) for (let x = 0; x < 5; x++) { g.beginPath(); g.arc(24 + x * 48 + (y % 2) * 24, 24 + y * 48, 17, 0, 7); g.fill(); } }
+    if (art === "tasse") { g.fillRect(0, 150, 240, 90); g.beginPath(); g.arc(120, 100, 56, 0, 7); g.fill(); g.fillStyle = farben[1]; g.beginPath(); g.arc(120, 100, 28, 0, 7); g.fill(); }
+    if (art === "pokal") { for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) { g.beginPath(); g.moveTo(30 + x * 60, y * 60 + 6); g.lineTo(54 + x * 60, y * 60 + 30); g.lineTo(30 + x * 60, y * 60 + 54); g.lineTo(6 + x * 60, y * 60 + 30); g.fill(); } }
+    return c.toDataURL("image/jpeg", 0.8);
+  }
+  if (!/[?&]ohnebilder(&|=|$)/.test(location.search) && !EXTREM) {
+    try {
+      D.bilder[normName("Ringwurst")] = bildErzeugen("ringwurst");
+      D.bilder[normName("Honig")] = bildErzeugen("honig");
+      D.bilder[normName("Tasse")] = bildErzeugen("tasse");
+      D.bilder[normName("Wanderpokal")] = bildErzeugen("pokal");
+    } catch (e) { /* ohne Canvas keine Bilder */ }
+  }
+  D.spiele.forEach((sp) => sp.siege.forEach((x) => { if (!x.id) x.id = "s" + (idz++); }));
+
   // ---------------------------------------------------------------- Regeln (Spiegel von spiel.py)
   const spiel = (j) => D.spiele.find((s) => s.jahr === (j == null ? D.jahr : j));
   const person = (id) => D.personen.find((p) => p.id === id);
@@ -143,9 +180,11 @@
   const sortName = (a, b) => (a.nachname + a.vorname).localeCompare(b.nachname + b.vorname, "de");
   const fehler = (t) => { throw new Error(t); };
 
+  const bildKey = (p) => (p && D.bilder[normName(p.name)] ? normName(p.name) : null);
   function siegDict(s, x) {
     const p = s.preise.find((q) => q.id === x.preis_id);
-    return { nr: x.nr, zeit: x.zeit || null, person_id: x.person_id, name: pname(x.person_id), preis_id: x.preis_id, preis_name: p ? p.name : "?", icon: p ? p.icon : "", sonderrunde: !!x.sonderrunde };
+    if (!x.id) x.id = nid("s");
+    return { id: x.id, bild: bildKey(p), importiert: !!x.importiert, nr: x.nr, zeit: x.zeit || null, person_id: x.person_id, name: pname(x.person_id), preis_id: x.preis_id, preis_name: p ? p.name : "?", icon: p ? p.icon : "", sonderrunde: !!x.sonderrunde };
   }
   function teiln(s) { return new Set([...s.anwesende_ids, ...s.siege.map((x) => x.person_id)]); }
   function zaehle(s) { const m = {}; s.siege.forEach((x) => (m[x.person_id] = (m[x.person_id] || 0) + 1)); return m; }
@@ -170,7 +209,7 @@
     const tn = {}, sg = {};
     D.spiele.forEach((s) => { teiln(s).forEach((i) => (tn[i] = (tn[i] || 0) + 1)); Object.entries(zaehle(s)).forEach(([i, n]) => (sg[i] = (sg[i] || 0) + n)); });
     const top = (arr) => arr.sort((a, b) => tn[b] - tn[a] || pname(a).localeCompare(pname(b), "de")).slice(0, 10).map((i) => ({ person_id: i, name: pname(i), teilnahmen: tn[i] }));
-    return { jahre, bestenliste: zeilen, jahresvergleich: jv, rekorde: { meiste_siege_abend: { ewig, je_jahr: jeJahr }, teilnahmen: top(Object.keys(tn)), pechvogel: top(Object.keys(tn).filter((i) => !sg[i])) } };
+    return { jahre, bestenliste: zeilen, jahresvergleich: jv, rekorde: { meiste_siege_nachmittag: { ewig, je_jahr: jeJahr }, teilnahmen: top(Object.keys(tn)), pechvogel: top(Object.keys(tn).filter((i) => !sg[i])) } };
   }
 
   function zustand(mitEreignis) {
@@ -187,17 +226,23 @@
       personen: [],
       statistik: statistik(),
       ereignis: mitEreignis ? D.ereignis : null,
+      demo: { aktiv: D.demo.aktiv, art: D.demo.aktiv ? D.demo.art : null },
+      bilder_version: D.bilder_version,
+      regeln: D.regeln.map((r) => ({ id: r.id, titel: r.titel, text: r.text, wuerfel: r.wuerfel ? r.wuerfel.slice() : null })),
+      regeln_intervall_s: D.regeln_intervall,
+      regel_index: D.regel_index,
+      regel_nonce: D.regel_nonce,
     };
     const z0 = s ? zaehle(s) : {};
     z.personen = D.personen.slice().sort(sortName).map((p) => ({ id: p.id, vorname: p.vorname, nachname: p.nachname, ist_team: p.ist_team, name: (p.vorname + " " + p.nachname).trim(), anwesend: !!s && s.anwesende_ids.includes(p.id), siege: z0[p.id] || 0 }));
     if (!s) return z;
     const akt = aktive(s);
     const ph = phasen(s);
-    const pd = (p) => { const r = rest(s, p.id); return { id: p.id, name: p.name, icon: p.icon, menge: p.menge, phase_id: p.phase_id, spezial: p.spezial, rest: r, vergeben: p.menge - r, waehlbar: !p.spezial && r > 0 && !!akt && p.phase_id === akt.id }; };
+    const pd = (p) => { const r = rest(s, p.id); return { id: p.id, name: p.name, icon: p.icon, bild: bildKey(p), menge: p.menge, phase_id: p.phase_id, spezial: p.spezial, rest: r, vergeben: p.menge - r, waehlbar: !p.spezial && r > 0 && !!akt && p.phase_id === akt.id }; };
     const ni = s.siege.filter((x) => !x.importiert);
     if (D.sonderrunde) {
       const p = s.preise.find((x) => x.id === D.sonderrunde);
-      if (p && p.spezial && rest(s, p.id) > 0) z.sonderrunde = { preis_id: p.id, name: p.name, icon: p.icon, rest: rest(s, p.id) };
+      if (p && p.spezial && rest(s, p.id) > 0) z.sonderrunde = { preis_id: p.id, name: p.name, icon: p.icon, bild: bildKey(p), rest: rest(s, p.id) };
     }
     z.spiel = {
       jahr: s.jahr, datum: s.datum,
@@ -226,7 +271,13 @@
     if (ereignis) { D.ez++; ereignis.id = D.ez; }
     D.ereignis = ereignis || null;
     const z = zustand(true);
-    try { if (kanal) kanal.postMessage(z); } catch (e) { /* egal */ }
+    try {
+      if (kanal) {
+        const m = Object.assign({}, z);
+        if (D.bilder_gepostet !== D.bilder_version) { m._bilder = D.bilder; D.bilder_gepostet = D.bilder_version; }
+        kanal.postMessage(m);
+      }
+    } catch (e) { /* egal */ }
     D.ereignis = null;
     return z;
   }
@@ -347,7 +398,135 @@
     },
     sonderrunde_abbrechen: () => { D.sonderrunde = null; return fertig(); },
     sonderrunde_sieg: (pid) => { if (!D.sonderrunde) fehler("Es läuft keine Sonderrunde."); return eintragen(pid, D.sonderrunde, true); },
-    beamer_ansicht_setzen: (a) => { D.ansicht = a; return fertig(); },
+    // ---- Neu: Spiele, Siege, Preisnamen, Personen, Bilder, Regeln, Demo
+    spiel_loeschen: (j) => {
+      j = +j; if (!spiel(j)) fehler("Für " + j + " gibt es kein Spiel.");
+      D.spiele = D.spiele.filter((s) => s.jahr !== j); D.sonderrunde = null;
+      if (D.jahr === j) { const r = D.spiele.map((s) => s.jahr).sort(); D.jahr = r.length ? r[r.length - 1] : null; }
+      return fertig();
+    },
+    siege_liste: (j) => {
+      const s = spiel(+j); if (!s) fehler("Für " + j + " gibt es kein Spiel.");
+      return s.siege.map((x) => { const d = siegDict(s, x); return { id: x.id, nr: x.nr, zeit: x.zeit || null, person_id: x.person_id, name: d.name, preis_id: x.preis_id, preis_name: d.preis_name, sonderrunde: !!x.sonderrunde, importiert: !!x.importiert }; });
+    },
+    // Preise eines Jahres, nur lesend (aendert das aktive Jahr nicht); Form wie paschen/verwaltung.py
+    preise_liste: (j) => {
+      const s = spiel(+j); if (!s) fehler("Für " + j + " gibt es kein Spiel.");
+      return s.preise.map((p) => ({ id: p.id, name: p.name, menge: p.menge, rest: rest(s, p.id), vergeben: vergeben(s, p.id), spezial: !!p.spezial, phase_id: p.phase_id || null, bild: bildKey(p) }));
+    },
+    sieg_bearbeiten: (j, sid, pid, prid) => {
+      const s = spiel(+j); if (!s) fehler("Für " + j + " gibt es kein Spiel.");
+      const x = s.siege.find((q) => q.id === sid); if (!x) fehler("Dieser Sieg existiert nicht.");
+      if (!person(pid)) fehler("Diese Person existiert nicht.");
+      const p = s.preise.find((q) => q.id === prid); if (!p) fehler("Dieser Preis existiert nicht.");
+      if (prid !== x.preis_id && rest(s, prid) <= 0) fehler("Der Preis \"" + p.name + "\" ist bereits vergeben.");
+      x.person_id = pid; x.preis_id = prid;
+      if (!s.anwesende_ids.includes(pid)) s.anwesende_ids.push(pid);
+      return fertig();
+    },
+    sieg_loeschen: (j, sid) => {
+      const s = spiel(+j); if (!s) fehler("Für " + j + " gibt es kein Spiel.");
+      if (!s.siege.some((q) => q.id === sid)) fehler("Dieser Sieg existiert nicht.");
+      s.siege = s.siege.filter((q) => q.id !== sid); s.siege.forEach((q, i) => { if (!q.importiert) q.nr = i + 1; }); D.sonderrunde = null;
+      return fertig();
+    },
+    preisnamen: () => {
+      const m = new Map();
+      D.spiele.slice().sort((a, b) => a.jahr - b.jahr).forEach((s) => s.preise.forEach((p) => {
+        const k = normName(p.name);
+        if (!m.has(k)) m.set(k, { name: p.name, jahre: [], anzahl: 0, vergeben: 0, hat_bild: !!D.bilder[k] });
+        const e = m.get(k); if (!e.jahre.includes(s.jahr)) e.jahre.push(s.jahr);
+        e.anzahl += p.menge; e.vergeben += vergeben(s, p.id);
+      }));
+      return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, "de"));
+    },
+    preisname_umbenennen: (alt, neu) => {
+      neu = (neu || "").trim(); if (!neu) fehler("Der neue Name darf nicht leer sein.");
+      const ka = normName(alt), kn = normName(neu);
+      if (!D.spiele.some((s) => s.preise.some((p) => normName(p.name) === ka))) fehler("Diesen Preisnamen gibt es nicht.");
+      D.spiele.forEach((s) => {
+        s.preise.forEach((p) => { if (normName(p.name) === ka) p.name = neu; });
+        const erste = {};
+        s.preise = s.preise.filter((p) => {
+          if (normName(p.name) !== kn) return true;
+          const e = erste[kn];
+          if (!e) { erste[kn] = p; return true; }
+          e.menge += p.menge; s.siege.forEach((x) => { if (x.preis_id === p.id) x.preis_id = e.id; }); return false;
+        });
+      });
+      if (ka !== kn && D.bilder[ka]) { if (!D.bilder[kn]) D.bilder[kn] = D.bilder[ka]; delete D.bilder[ka]; }
+      D.bilder_version++;
+      return fertig();
+    },
+    person_bearbeiten: (id, v, n, team) => {
+      const p = person(id); if (!p) fehler("Diese Person existiert nicht.");
+      v = (v || "").trim(); n = (n || "").trim();
+      if (!v && !n) fehler("Bitte Vor- und Nachname eingeben.");
+      if (!team && (!v || !n)) fehler("Bitte Vor- und Nachname eingeben.");
+      if (D.personen.some((q) => q.id !== id && q.vorname.toLowerCase() === v.toLowerCase() && q.nachname.toLowerCase() === n.toLowerCase())) fehler("\"" + v + " " + n + "\" gibt es schon. Bitte stattdessen zusammenführen.");
+      Object.assign(p, { vorname: v, nachname: n, ist_team: !!team }); return fertig();
+    },
+    personen_zusammenfuehren: (q, z) => {
+      if (q === z) fehler("Quelle und Ziel sind dieselbe Person.");
+      if (!person(q) || !person(z)) fehler("Person nicht gefunden.");
+      D.spiele.forEach((s) => {
+        s.siege.forEach((x) => { if (x.person_id === q) x.person_id = z; });
+        if (s.anwesende_ids.includes(q) && !s.anwesende_ids.includes(z)) s.anwesende_ids.push(z);
+        s.anwesende_ids = s.anwesende_ids.filter((i) => i !== q);
+      });
+      D.personen = D.personen.filter((p) => p.id !== q); return fertig();
+    },
+    preis_bild_setzen: (name, url) => {
+      if (!/^data:image\/(jpeg|png);base64,/.test(url || "")) fehler("Das ist kein gültiges Bild.");
+      if (!(name || "").trim()) fehler("Der Preisname fehlt.");
+      D.bilder[normName(name)] = url; D.bilder_version++; return fertig();
+    },
+    preis_bild_entfernen: (name) => { delete D.bilder[normName(name)]; D.bilder_version++; return fertig(); },
+    bilder: () => Object.assign({}, D.bilder),
+    regel_hinzufuegen: (titel, text, w) => {
+      titel = (titel || "").trim(); if (!titel) fehler("Die Folie braucht einen Titel.");
+      D.regeln.push({ id: nid("r"), titel, text: (text || "").trim(), wuerfel: w || null }); return fertig();
+    },
+    regel_bearbeiten: (id, titel, text, w) => {
+      const r = D.regeln.find((x) => x.id === id); if (!r) fehler("Diese Folie existiert nicht.");
+      titel = (titel || "").trim(); if (!titel) fehler("Die Folie braucht einen Titel.");
+      Object.assign(r, { titel, text: (text || "").trim(), wuerfel: w || null }); return fertig();
+    },
+    regel_loeschen: (id) => {
+      D.regeln = D.regeln.filter((x) => x.id !== id);
+      if (D.regel_index >= D.regeln.length) D.regel_index = 0;
+      return fertig();
+    },
+    regel_verschieben: (id, richtung) => {
+      const i = D.regeln.findIndex((x) => x.id === id), j = i + (richtung > 0 ? 1 : -1);
+      if (i < 0) fehler("Diese Folie existiert nicht.");
+      if (j >= 0 && j < D.regeln.length) [D.regeln[i], D.regeln[j]] = [D.regeln[j], D.regeln[i]];
+      return fertig();
+    },
+    regeln_intervall_setzen: (sek) => {
+      sek = +sek; if (!(sek >= 5 && sek <= 120)) fehler("Das Intervall muss zwischen 5 und 120 Sekunden liegen.");
+      D.regeln_intervall = Math.round(sek); return fertig();
+    },
+    regel_folie: (ziel) => {
+      const n = D.regeln.length; if (!n) fehler("Es gibt noch keine Regel-Folien.");
+      if (ziel === "vor") D.regel_index = (D.regel_index + 1) % n;
+      else if (ziel === "zurueck") D.regel_index = (D.regel_index - 1 + n) % n;
+      else D.regel_index = Math.max(0, Math.min(n - 1, +ziel || 0));
+      D.regel_nonce++; return fertig();
+    },
+    demo_starten: (art) => {
+      if (art !== "erfunden" && art !== "kopie") fehler("Unbekannte Demo-Art.");
+      D.demo = { aktiv: true, art }; return fertig();
+    },
+    demo_beenden: () => { D.demo = { aktiv: false, art: "erfunden" }; return fertig(); },
+    demo_zuruecksetzen: () => {
+      if (!D.demo.aktiv) fehler("Der Demo-Modus ist nicht aktiv.");
+      const b = D.bilder, bv = D.bilder_version + 1, demo = D.demo;
+      D.personen = []; D.spiele = []; D.sonderrunde = null; D.jahr = 2025;
+      aufbauen(); D.spiele.forEach((sp) => sp.siege.forEach((x) => { if (!x.id) x.id = "s" + (idz++); }));
+      D.bilder = b; D.bilder_version = bv; D.demo = demo; return fertig();
+    },
+    beamer_ansicht_setzen: (a) => { if (a !== "spiel" && a !== "statistik" && a !== "regeln") fehler("Unbekannte Beamer-Ansicht."); D.ansicht = a; return fertig(); },
     beamer_design_setzen: (d) => { if (d !== "hell" && d !== "dunkel") fehler("Unbekanntes Beamer-Design."); D.design = d; return fertig(); },
     beamer_bildschirm_wechseln: () => fehler("Demo-Modus: kein Beamer-Fenster."),
     beamer_oeffnen: () => fehler("Demo-Modus: kein Beamer-Fenster."),
@@ -375,6 +554,7 @@
   api._vorfuehren = function (modus) {
     const s = spiel();
     if (modus === "statistik") D.ansicht = "statistik";
+    if (modus === "regeln") D.ansicht = "regeln";
     if (modus === "sonderrunde") {
       s.preise.filter((p) => !p.spezial).forEach((p) => { for (let i = rest(s, p.id); i > 0; i--) s.siege.push({ nr: s.siege.length + 1, person_id: s.anwesende_ids[i % 20], preis_id: p.id, sonderrunde: false, importiert: false }); });
       D.sonderrunde = "sp1";
@@ -389,6 +569,7 @@
     return z;
   };
   api._kanal = kanal;
+  api._bilder = () => Object.assign({}, D.bilder);
 
   window.MockApi = api;
 })();

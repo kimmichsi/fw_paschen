@@ -124,3 +124,12 @@ def _backup_anlegen(ordner: Path, ziel: Path) -> None:
             alt.unlink()
         except OSError:
             pass
+
+
+def sicherung_anlegen(ordner: Pfad, bestand: Datenbestand, name: str) -> Path:
+    """Schreibt eine zusaetzliche, benannte Sicherung ``backup/<name>.json`` (wird nicht rotiert)."""
+    bdir = Path(ordner) / BACKUP_ORDNER
+    bdir.mkdir(parents=True, exist_ok=True)
+    ziel = bdir / f"{name}.json"
+    ziel.write_text(bestand.to_json(), encoding="utf-8")
+    return ziel

@@ -1,24 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <title>Paschen - Wuerfel-Pasch</title>
-  <rect x="5.12" y="5.12" width="143.36" height="143.36" rx="31.54" fill="#8E0B20"/>
-  <rect x="9.73" y="9.73" width="128.51" height="128.51" rx="28.39" fill="#C8102E"/>
-  <circle cx="44.43" cy="44.43" r="10.54" fill="#FFFFFF"/>
-  <circle cx="103.54" cy="44.43" r="10.54" fill="#FFFFFF"/>
-  <circle cx="73.98" cy="73.98" r="10.54" fill="#FFFFFF"/>
-  <circle cx="44.43" cy="103.54" r="10.54" fill="#FFFFFF"/>
-  <circle cx="103.54" cy="103.54" r="10.54" fill="#FFFFFF"/>
-  <rect x="56.32" y="56.32" width="143.36" height="143.36" rx="31.54" fill="#8E0B20"/>
-  <rect x="60.93" y="60.93" width="128.51" height="128.51" rx="28.39" fill="#C8102E"/>
-  <circle cx="95.63" cy="95.63" r="10.54" fill="#FFFFFF"/>
-  <circle cx="154.74" cy="95.63" r="10.54" fill="#FFFFFF"/>
-  <circle cx="125.18" cy="125.18" r="10.54" fill="#FFFFFF"/>
-  <circle cx="95.63" cy="154.74" r="10.54" fill="#FFFFFF"/>
-  <circle cx="154.74" cy="154.74" r="10.54" fill="#FFFFFF"/>
-  <rect x="107.52" y="107.52" width="143.36" height="143.36" rx="31.54" fill="#8E0B20"/>
-  <rect x="112.13" y="112.13" width="128.51" height="128.51" rx="28.39" fill="#C8102E"/>
-  <circle cx="146.83" cy="146.83" r="10.54" fill="#FFFFFF"/>
-  <circle cx="205.94" cy="146.83" r="10.54" fill="#FFFFFF"/>
-  <circle cx="176.38" cy="176.38" r="10.54" fill="#FFFFFF"/>
-  <circle cx="146.83" cy="205.94" r="10.54" fill="#FFFFFF"/>
-  <circle cx="205.94" cy="205.94" r="10.54" fill="#FFFFFF"/>
+  <title>Paschen - drei Einsen</title>
+  <rect x="2.56" y="2.56" width="104.96" height="104.96" rx="23.09" fill="#8E0B20"/>
+  <rect x="8.32" y="8.32" width="86.40" height="86.40" rx="20.78" fill="#C8102E"/>
+  <circle cx="51.52" cy="51.52" r="16.42" fill="#FFFFFF"/>
+  <rect x="76.80" y="76.80" width="104.96" height="104.96" rx="23.09" fill="#8E0B20"/>
+  <rect x="82.56" y="82.56" width="86.40" height="86.40" rx="20.78" fill="#C8102E"/>
+  <circle cx="125.76" cy="125.76" r="16.42" fill="#FFFFFF"/>
+  <rect x="151.04" y="151.04" width="104.96" height="104.96" rx="23.09" fill="#8E0B20"/>
+  <rect x="156.80" y="156.80" width="86.40" height="86.40" rx="20.78" fill="#C8102E"/>
+  <circle cx="200.00" cy="200.00" r="16.42" fill="#FFFFFF"/>
 </svg>
