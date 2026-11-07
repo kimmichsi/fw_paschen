@@ -19,7 +19,10 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Optional
 
-VERSION = 2
+VERSION = 3
+
+LETZTE_PHASE_MODI = ("tisch", "frei")
+MAX_TISCHE = 12
 
 STANDARD_INTERVALL_S = 12
 
@@ -143,6 +146,8 @@ class Sieg:
 
     ``nr``/``zeit`` sind bei importierten Siegen ``None`` (``importiert=True``).
     ``sonderrunde=True`` bei Vergabe eines Spezialpreises per Sonderrunde.
+    ``tisch`` (1..Spiel.tische) ist der Tisch, an dem gespielt wurde (``None`` = nicht erfasst);
+    ``phase_id`` die Phase, in der der Sieg fiel (``None`` bei alten/importierten Siegen).
     """
 
     person_id: str
@@ -152,6 +157,8 @@ class Sieg:
     sonderrunde: bool = False
     importiert: bool = False
     id: str = field(default_factory=neue_id)
+    tisch: Optional[int] = None
+    phase_id: Optional[str] = None
 
     def to_dict(self) -> dict:
         return {
@@ -162,6 +169,8 @@ class Sieg:
             "preis_id": self.preis_id,
             "sonderrunde": self.sonderrunde,
             "importiert": self.importiert,
+            "tisch": self.tisch,
+            "phase_id": self.phase_id,
         }
 
     @classmethod
@@ -174,6 +183,8 @@ class Sieg:
             preis_id=d["preis_id"],
             sonderrunde=bool(d.get("sonderrunde", False)),
             importiert=bool(d.get("importiert", False)),
+            tisch=int(d["tisch"]) if d.get("tisch") is not None else None,  # Migration v2 -> v3
+            phase_id=d.get("phase_id"),
         )
 
 
@@ -187,6 +198,9 @@ class Spiel:
     preise: list[Preis] = field(default_factory=list)
     anwesende_ids: list[str] = field(default_factory=list)
     siege: list[Sieg] = field(default_factory=list)
+    # Tisch-Kontingente: Anzahl Tische (1 = ohne Tische) und Regel der letzten Phase ("tisch" | "frei")
+    tische: int = 1
+    letzte_phase_modus: str = "tisch"
 
     # --- Hilfen -------------------------------------------------------
     def preis(self, preis_id: str) -> Optional[Preis]:
@@ -212,6 +226,8 @@ class Spiel:
             "preise": [p.to_dict() for p in self.preise],
             "anwesende_ids": list(self.anwesende_ids),
             "siege": [s.to_dict() for s in self.siege],
+            "tische": self.tische,
+            "letzte_phase_modus": self.letzte_phase_modus,
         }
 
     @classmethod
@@ -223,6 +239,10 @@ class Spiel:
             preise=[Preis.from_dict(x) for x in d.get("preise", [])],
             anwesende_ids=list(d.get("anwesende_ids", [])),
             siege=[Sieg.from_dict(x) for x in d.get("siege", [])],
+            tische=max(1, min(MAX_TISCHE, int(d.get("tische") or 1))),  # Migration v2 -> v3
+            letzte_phase_modus=(
+                d["letzte_phase_modus"] if d.get("letzte_phase_modus") in LETZTE_PHASE_MODI else "tisch"
+            ),
         )
 
 
@@ -277,7 +297,7 @@ class Datenbestand:
 
     @classmethod
     def from_dict(cls, d: dict) -> "Datenbestand":
-        """Laedt auch aeltere Staende (v1): Sieg-IDs, Standard-Regeln und leere Bildzuordnung werden ergaenzt."""
+        """Laedt auch aeltere Staende (v1, v2: Tische, Tisch/Phase der Siege): Sieg-IDs, Standard-Regeln und leere Bildzuordnung werden ergaenzt."""
         regeln = d["regeln"] if isinstance(d.get("regeln"), list) else standard_regeln()
         return cls(
             version=VERSION,

@@ -9,6 +9,14 @@
   const VOR = "Fridolin Ottilie Kunigunde Balduin Hermine Eberhard Waltraud Leopold Gundula Theobald Rosalinde Adelbert Mechthild Wendelin Hildegunde Kasimir Brunhilde Ansgar Irmtraud Volkmar Gerlinde Radegund Isidor Walburga Humbert Thusnelda Lambert Sieglinde Quirin".split(" ");
   const NACH = "Musterfrau Beispiel Probe Testmann Demo Platzhalter Vorlage Exempel Schablone Attrappe Modell Stichprobe Fiktiv Erfunden Beleg Entwurf Skizze Dummy Zufall Rohling Prototyp Kopie Nachbau Probant Testfall Stellvertreter Mustermann Fallbeispiel Versuch Muster".split(" ");
 
+  // Tische (Demo): ?demo&tische=N (Standard 4), &letzte = letzte Phase mit Uebertrag, &letzte=frei = Kontingente erschoepft, &modus=frei = letzte Phase ohne Kontingent
+  const QS = location.search;
+  const TISCHE = (function () { const m = /[?&]tische=(\d+)/.exec(QS); return m ? Math.max(1, Math.min(12, +m[1])) : 4; })();
+  const TISCHE_GESETZT = /[?&]tische=\d/.test(QS);
+  const MODUS = /[?&]modus=frei(&|$)/.test(QS) ? "frei" : "tisch";
+  const LETZTE = /[?&]letzte(&|=|$)/.test(QS);
+  const LETZTE_FREI = /[?&]letzte=frei(&|$)/.test(QS);
+
   const D = { ordner: "C:\\Demo\\Paschen-Daten", personen: [], spiele: [], jahr: 2025, ansicht: "spiel", design: (/[?&]design=dunkel(&|$)/.test(location.search) ? "dunkel" : "hell"), sonderrunde: null, ereignis: null, ez: 0,
     demo: { aktiv: /[?&]demoband(&|=|$)/.test(location.search), art: "erfunden" }, bilder: {}, bilder_version: 1, bilder_gepostet: 0,
     regeln: [], regeln_intervall: 12, regel_index: 0, regel_nonce: 1 };
@@ -24,6 +32,27 @@
     { id: "r9", titel: "Der Gewinner wählt", text: "Nach jeder Runde sucht sich der Gewinner einen der noch verfügbaren Preise aus – hier auf dem Beamer zu sehen.", wuerfel: null },
   ];
   { const m = /[?&]folie=(\d+)/.exec(location.search); if (m) D.regel_index = +m[1]; }
+
+  // ?letzte: fruehere Phasen nach Kontingent beenden (Rest wandert in die letzte Phase), die letzte laeuft (&letzte=frei: Kontingente erschoepft)
+  function letzteSpielen(s25, T, r, pidFn) {
+    const ph = s25.phasen.slice().sort((a, b) => a.reihenfolge - b.reihenfolge);
+    const last = ph[ph.length - 1];
+    const einh = (id) => { const u = []; s25.preise.filter((p) => p.phase_id === id && !p.spezial).forEach((p) => { for (let i = 0; i < p.menge; i++) u.push(p.id); }); return u; };
+    const mischen = (u) => u.map((x) => [r(), x]).sort((a, b) => a[0] - b[0]).map((e) => e[1]);
+    const spielen = (u, phId) => u.forEach((pr, i) => {
+      const n = s25.siege.length;
+      s25.siege.push({ nr: n + 1, person_id: pidFn(), preis_id: pr, sonderrunde: false, importiert: false, phase_id: phId, tisch: (i % T) + 1, zeit: "2025-11-06T19:" + String(10 + (n % 50)).padStart(2, "0") + ":00" });
+    });
+    let carry = [];
+    ph.slice(0, -1).forEach((p) => {
+      const u = einh(p.id); const rest1 = u.length - T * Math.floor(u.length / T);
+      spielen(mischen(u.slice(0, u.length - rest1)), p.id);
+      carry = carry.concat(u.slice(u.length - rest1));
+    });
+    const eigene = einh(last.id); const pl = eigene.concat(carry);
+    if (LETZTE_FREI) { const rest2 = pl.length - T * Math.floor(pl.length / T); spielen(mischen(pl.slice(0, pl.length - rest2)), last.id); }
+    else spielen(eigene.slice(0, 9), last.id);
+  }
 
   function aufbauen() {
     for (let i = 0; i < 30; i++) {
@@ -45,7 +74,7 @@
         const pid = ids[Math.floor(Math.pow(r(), 1.6) * ids.length)];
         siege.push({ nr: null, person_id: pid, preis_id: "alt" + jahr, sonderrunde: false, importiert: true });
       }
-      D.spiele.push({ jahr, datum: null, phasen: [], preise: [{ id: "alt" + jahr, name: "Preise", icon: "geschenk", menge, phase_id: null, spezial: false }], anwesende_ids: ids, siege });
+      D.spiele.push({ jahr, datum: null, tische: 1, letzte_phase_modus: "tisch", phasen: [], preise: [{ id: "alt" + jahr, name: "Preise", icon: "geschenk", menge, phase_id: null, spezial: false }], anwesende_ids: ids, siege });
     });
     const p1 = { id: "ph1", name: "Wurst & Teigwaren", reihenfolge: 1 };
     const p2 = { id: "ph2", name: "Werbegeschenke", reihenfolge: 2 };
@@ -72,14 +101,19 @@
       preise[3].name = "Hausgemachte Teigwaren";
     }
     const anw = D.personen.slice(0, 26).map((p) => p.id);
-    const s25 = { jahr: 2025, datum: null, phasen: [p1, p2], preise, anwesende_ids: anw, siege: [] };
+    const s25 = { jahr: 2025, datum: null, tische: TISCHE, letzte_phase_modus: MODUS, phasen: [p1, p2], preise, anwesende_ids: anw, siege: [] };
     D.spiele.push(s25);
-    // einige Siege vorspielen (gewichtet)
-    const pre = ["w1", "w1", "w3", "w4", "w4", "w2", "w3", "w5", "w4", "w1", "w2", "w3", "w4", "w4", "w1", "w3", "w2", "w4", "w5", "w3", "w1", "w4", "w2", "w3", "w4", "w1", "w3"];
-    pre.forEach((pr, i) => {
-      const pid = anw[Math.floor(Math.pow(r(), 1.5) * anw.length)];
-      s25.siege.push({ nr: i + 1, person_id: pid, preis_id: pr, sonderrunde: false, importiert: false, zeit: "2025-11-06T19:" + String(10 + i).padStart(2, "0") + ":00" });
-    });
+    const pidZufall = () => anw[Math.floor(Math.pow(r(), 1.5) * anw.length)];
+    const zeitNr = (i) => "2025-11-06T19:" + String(10 + (i % 50)).padStart(2, "0") + ":00";
+    if (LETZTE && TISCHE > 1) {
+      letzteSpielen(s25, TISCHE, r, pidZufall);
+    } else {
+      // einige Siege vorspielen (gewichtet); bei mehreren Tischen reihum auf die Tische verteilt
+      const pre = ["w1", "w1", "w3", "w4", "w4", "w2", "w3", "w5", "w4", "w1", "w2", "w3", "w4", "w4", "w1", "w3", "w2", "w4", "w5", "w3", "w1", "w4", "w2", "w3", "w4", "w1", "w3"];
+      pre.forEach((pr, i) => {
+        s25.siege.push({ nr: i + 1, person_id: pidZufall(), preis_id: pr, sonderrunde: false, importiert: false, phase_id: "ph1", tisch: TISCHE > 1 ? (i % TISCHE) + 1 : null, zeit: "2025-11-06T19:" + String(10 + i).padStart(2, "0") + ":00" });
+      });
+    }
   }
   // Worst-Case-Daten zum Ausprobieren der Oberflaeche (alles ERFUNDEN):
   //   ?demo&extrem        70 Anwesende, sehr lange Namen/Teams, Ein-Buchstaben-Namen, dreistellige Mengen,
@@ -88,7 +122,7 @@
   function aufbauenExtrem(leer) {
     D.personen = []; D.spiele = [];
     if (leer) {
-      D.spiele.push({ jahr: 2025, datum: null, phasen: [], preise: [], anwesende_ids: [], siege: [] });
+      D.spiele.push({ jahr: 2025, datum: null, tische: 1, letzte_phase_modus: "tisch", phasen: [], preise: [], anwesende_ids: [], siege: [] });
       return;
     }
     const LANG_V = "Maximiliane-Theodora-Annabelle-Friederike-Gundelinde";
@@ -112,7 +146,7 @@
       const menge = 90 + Math.floor(r() * 80);
       const siege = [];
       for (let i = 0; i < menge; i++) siege.push({ nr: null, person_id: ids[Math.floor(Math.pow(r(), 1.6) * ids.length)], preis_id: "alt" + jahr, sonderrunde: false, importiert: true });
-      D.spiele.push({ jahr, datum: null, phasen: [], preise: [{ id: "alt" + jahr, name: "Preise", icon: "geschenk", menge, phase_id: null, spezial: false }], anwesende_ids: ids, siege });
+      D.spiele.push({ jahr, datum: null, tische: 1, letzte_phase_modus: "tisch", phasen: [], preise: [{ id: "alt" + jahr, name: "Preise", icon: "geschenk", menge, phase_id: null, spezial: false }], anwesende_ids: ids, siege });
     }
     const p1 = { id: "ph1", name: "Phase 1 – Wurst, Teigwaren und andere Dauerwaren aus dem Vereinsvorrat", reihenfolge: 1 };
     const p2 = { id: "ph2", name: "Phase 2 – Werbegeschenke", reihenfolge: 2 };
@@ -128,15 +162,16 @@
     preise.push({ id: "sp1", name: "Flasche Premium-Gin aus der Vereinsbrennerei (limitierte Sonderfüllung)", icon: "flasche", menge: 1, phase_id: null, spezial: true });
     preise.push({ id: "sp2", name: "Reisegutschein", icon: "geschenk", menge: 2, phase_id: null, spezial: true });
     const anw = D.personen.map((p) => p.id);
-    const s25 = { jahr: 2025, datum: null, phasen: [p1, p2, p3, p4], preise, anwesende_ids: anw, siege: [] };
+    const s25 = { jahr: 2025, datum: null, tische: TISCHE_GESETZT ? TISCHE : 1, letzte_phase_modus: MODUS, phasen: [p1, p2, p3, p4], preise, anwesende_ids: anw, siege: [] };
     D.spiele.push(s25);
     // 148 Runden vorspielen; der letzte Gewinner hat einen sehr langen Namen
     for (let i = 0; i < 148; i++) {
       const pid = i === 147 ? "p3" : anw[Math.floor(Math.pow(r(), 1.5) * anw.length)];
       let k = i % 14;
       if (k === 5 && s25.siege.filter((x) => x.preis_id === "w5").length >= 2) k = 3;
-      s25.siege.push({ nr: i + 1, person_id: pid, preis_id: "w" + k, sonderrunde: false, importiert: false, zeit: "2025-11-06T19:" + String(10 + (i % 50)).padStart(2, "0") + ":00" });
+      s25.siege.push({ nr: i + 1, person_id: pid, preis_id: "w" + k, sonderrunde: false, importiert: false, phase_id: "ph1", tisch: s25.tische > 1 ? (i % s25.tische) + 1 : null, zeit: "2025-11-06T19:" + String(10 + (i % 50)).padStart(2, "0") + ":00" });
     }
+    if (LETZTE && s25.tische > 1) { s25.siege = []; letzteSpielen(s25, s25.tische, r, () => anw[Math.floor(Math.pow(r(), 1.5) * anw.length)]); }
   }
   const EXTREM = /[?&]extrem(&|=|$)/.test(location.search);
   const EXTREM_LEER = /[?&]extrem=leer(&|$)/.test(location.search);
@@ -174,7 +209,50 @@
   const vergeben = (s, id) => s.siege.filter((x) => x.preis_id === id).length;
   const rest = (s, id) => { const p = s.preise.find((x) => x.id === id); return Math.max(0, p.menge - vergeben(s, id)); };
   const phasen = (s) => s.phasen.slice().sort((a, b) => a.reihenfolge - b.reihenfolge);
-  const aktive = (s) => phasen(s).find((ph) => s.preise.some((p) => p.phase_id === ph.id && !p.spezial && rest(s, p.id) > 0)) || null;
+  // ---- Tische und Kontingente (Spiegel von paschen/spiel.py, alles aus dem aktuellen Stand berechnet)
+  const nT = (s) => Math.max(1, s.tische || 1);
+  const phPreise = (s, ph) => s.preise.filter((p) => p.phase_id === ph.id && !p.spezial);
+  const phEigen = (s, ph) => phPreise(s, ph).reduce((a, p) => a + p.menge, 0);
+  const phRest = (s, ph) => phPreise(s, ph).reduce((a, p) => a + rest(s, p.id), 0);
+  const phSiege = (s, ph) => s.siege.filter((x) => !x.sonderrunde && x.phase_id === ph.id);
+  const letztePh = (s) => { const l = phasen(s); return l.length ? l[l.length - 1] : null; };
+  const istLetzte = (s, ph) => { const l = letztePh(s); return !!l && !!ph && l.id === ph.id; };
+  const vorherVergeben = (s, id) => { const l = letztePh(s); return s.siege.filter((x) => x.preis_id === id && x.phase_id !== l.id).length; };
+  // eine NICHT letzte Phase ist fertig: Rest 0 oder (mehrere Tische) alle Tische am Kontingent
+  const frFertig = (s, ph) => {
+    if (phRest(s, ph) === 0) return true;
+    const T = nT(s); if (T < 2) return false;
+    const k = Math.floor(phEigen(s, ph) / T);
+    for (let t = 1; t <= T; t++) if (phSiege(s, ph).filter((x) => x.tisch === t).length < k) return false;
+    return true;
+  };
+  const uebertragPhase = (s, ph) => (!letztePh(s) || istLetzte(s, ph) || !frFertig(s, ph)) ? 0 : phPreise(s, ph).reduce((a, p) => a + Math.max(0, p.menge - vorherVergeben(s, p.id)), 0);
+  const uebertragGesamt = (s) => s.phasen.reduce((a, ph) => a + uebertragPhase(s, ph), 0);
+  const uebertragenePreise = (s) => {
+    const l = letztePh(s); if (!l) return [];
+    const e = [];
+    phasen(s).forEach((ph) => { if (ph.id !== l.id && frFertig(s, ph)) phPreise(s, ph).forEach((p) => { if (p.menge - vorherVergeben(s, p.id) > 0) e.push(p); }); });
+    return e;
+  };
+  const istUebertragen = (s, p) => uebertragenePreise(s).some((x) => x.id === p.id);
+  const pool = (s, ph) => istLetzte(s, ph) ? s.preise.filter((p) => (p.phase_id === ph.id && !p.spezial) || istUebertragen(s, p)) : phPreise(s, ph);
+  const phFertig = (s, ph) => istLetzte(s, ph) ? pool(s, ph).every((p) => rest(s, p.id) === 0) : frFertig(s, ph);
+  const aktive = (s) => phasen(s).find((ph) => !phFertig(s, ph)) || null;
+  const waehlbar = (s, akt, p) => !!akt && rest(s, p.id) > 0 && pool(s, akt).some((x) => x.id === p.id);
+  const kontingent = (s, ph) => {
+    if (istLetzte(s, ph)) { if (s.letzte_phase_modus === "frei") return null; return Math.floor((phEigen(s, ph) + uebertragGesamt(s)) / nT(s)); }
+    return Math.floor(phEigen(s, ph) / nT(s));
+  };
+  const gespieltTisch = (s, ph, t) => phSiege(s, ph).filter((x) => x.tisch === t).length;
+  function tischStand(s, akt) {
+    const T = nT(s);
+    if (T < 2 || !akt) return { stand: null, frei: false };
+    const k = kontingent(s, akt);
+    if (k == null) return { stand: null, frei: false };
+    const stand = [];
+    for (let t = 1; t <= T; t++) { const g = gespieltTisch(s, akt, t); stand.push({ tisch: t, gespielt: g, kontingent: k, noch: Math.max(0, k - g), fertig: g >= k }); }
+    return { stand, frei: istLetzte(s, akt) && s.letzte_phase_modus === "tisch" && stand.every((e) => e.fertig) };
+  }
   const restGesamt = (s) => s.preise.reduce((a, p) => a + rest(s, p.id), 0);
   const beendet = (s) => s.preise.length > 0 && restGesamt(s) === 0;
   const sortName = (a, b) => (a.nachname + a.vorname).localeCompare(b.nachname + b.vorname, "de");
@@ -184,7 +262,7 @@
   function siegDict(s, x) {
     const p = s.preise.find((q) => q.id === x.preis_id);
     if (!x.id) x.id = nid("s");
-    return { id: x.id, bild: bildKey(p), importiert: !!x.importiert, nr: x.nr, zeit: x.zeit || null, person_id: x.person_id, name: pname(x.person_id), preis_id: x.preis_id, preis_name: p ? p.name : "?", icon: p ? p.icon : "", sonderrunde: !!x.sonderrunde };
+    return { id: x.id, bild: bildKey(p), importiert: !!x.importiert, tisch: x.tisch == null ? null : x.tisch, nr: x.nr, zeit: x.zeit || null, person_id: x.person_id, name: pname(x.person_id), preis_id: x.preis_id, preis_name: p ? p.name : "?", icon: p ? p.icon : "", sonderrunde: !!x.sonderrunde };
   }
   function teiln(s) { return new Set([...s.anwesende_ids, ...s.siege.map((x) => x.person_id)]); }
   function zaehle(s) { const m = {}; s.siege.forEach((x) => (m[x.person_id] = (m[x.person_id] || 0) + 1)); return m; }
@@ -218,7 +296,7 @@
       datenordner: D.ordner,
       jahre: D.spiele.map((x) => x.jahr).sort(),
       jahr: s ? s.jahr : null,
-      jahre_info: D.spiele.slice().sort((a, b) => a.jahr - b.jahr).map((x) => ({ jahr: x.jahr, preise: x.preise.reduce((a, p) => a + p.menge, 0), teilnehmer: x.anwesende_ids.length, siege: x.siege.length, beendet: beendet(x) })),
+      jahre_info: D.spiele.slice().sort((a, b) => a.jahr - b.jahr).map((x) => ({ jahr: x.jahr, preise: x.preise.reduce((a, p) => a + p.menge, 0), teilnehmer: x.anwesende_ids.length, siege: x.siege.length, beendet: beendet(x), tische: x.tische || 1 })),
       beamer_ansicht: D.ansicht,
       beamer_design: D.design,
       sonderrunde: null,
@@ -238,7 +316,8 @@
     if (!s) return z;
     const akt = aktive(s);
     const ph = phasen(s);
-    const pd = (p) => { const r = rest(s, p.id); return { id: p.id, name: p.name, icon: p.icon, bild: bildKey(p), menge: p.menge, phase_id: p.phase_id, spezial: p.spezial, rest: r, vergeben: p.menge - r, waehlbar: !p.spezial && r > 0 && !!akt && p.phase_id === akt.id }; };
+    const pd = (p) => { const r = rest(s, p.id); return { id: p.id, name: p.name, icon: p.icon, bild: bildKey(p), menge: p.menge, phase_id: p.phase_id, spezial: p.spezial, rest: r, vergeben: p.menge - r, waehlbar: waehlbar(s, akt, p), uebertragen: istUebertragen(s, p) }; };
+    const ts = tischStand(s, akt);
     const ni = s.siege.filter((x) => !x.importiert);
     if (D.sonderrunde) {
       const p = s.preise.find((x) => x.id === D.sonderrunde);
@@ -246,7 +325,17 @@
     }
     z.spiel = {
       jahr: s.jahr, datum: s.datum,
-      phasen: ph.map((p) => { const ps = s.preise.filter((x) => x.phase_id === p.id && !x.spezial); const r = ps.reduce((a, x) => a + rest(s, x.id), 0); const g = ps.reduce((a, x) => a + x.menge, 0); return { id: p.id, name: p.name, reihenfolge: p.reihenfolge, rest: r, gesamt: g, aktiv: !!akt && akt.id === p.id, abgeschlossen: g > 0 && r === 0, preise: ps.map((x) => x.id) }; }),
+      tische: nT(s), letzte_phase_modus: s.letzte_phase_modus || "tisch",
+      tisch_stand: ts.stand, tisch_frei: ts.frei,
+      uebertrag: uebertragGesamt(s),
+      phasen: ph.map((p) => {
+        const ps = phPreise(s, p); const eigene = ps.reduce((x, q) => x + q.menge, 0); const fertig = phFertig(s, p); const u = uebertragPhase(s, p);
+        let r, g;
+        if (istLetzte(s, p)) { r = pool(s, p).reduce((x, q) => x + rest(s, q.id), 0); g = eigene + uebertragGesamt(s); }
+        else if (fertig) { r = 0; g = eigene - u; }
+        else { r = ps.reduce((x, q) => x + rest(s, q.id), 0); g = eigene; }
+        return { id: p.id, name: p.name, reihenfolge: p.reihenfolge, rest: r, gesamt: g, aktiv: !!akt && akt.id === p.id, abgeschlossen: fertig && g + u > 0, uebertragen: u, letzte: istLetzte(s, p), preise: ps.map((x) => x.id) };
+      }),
       phasen_anzahl: ph.length,
       aktive_phase_id: akt ? akt.id : null,
       aktive_phase_name: akt ? akt.name : null,
@@ -284,25 +373,38 @@
   function folge(s, vorher) {
     if (beendet(s)) return { typ: "ende" };
     const jetzt = aktive(s);
-    if ((jetzt ? jetzt.id : null) !== (vorher ? vorher.id : null)) return { typ: "phasenwechsel", von_name: vorher ? vorher.name : null, nach_name: jetzt ? jetzt.name : null };
+    if ((jetzt ? jetzt.id : null) !== (vorher ? vorher.id : null)) {
+      const u = vorher ? uebertragPhase(s, vorher) : 0;
+      return { typ: "phasenwechsel", von_name: vorher ? vorher.name : null, nach_name: jetzt ? jetzt.name : null, uebertrag: u };
+    }
     return null;
   }
-  function eintragen(pid, prid, sonder) {
+  function eintragen(pid, prid, sonder, tisch) {
     const s = spiel();
     if (!s) fehler("Bitte zuerst ein Spiel wählen.");
     if (!s.anwesende_ids.includes(pid)) fehler("Diese Person ist nicht als anwesend angemeldet.");
     const p = s.preise.find((x) => x.id === prid);
     if (!p) fehler("Dieser Preis existiert nicht.");
     if (rest(s, prid) <= 0) fehler('Der Preis "' + p.name + '" ist bereits vergeben.');
+    const T = nT(s);
+    tisch = tisch == null || tisch === "" ? null : +tisch;
+    if (tisch != null && !(Number.isInteger(tisch) && tisch >= 1 && tisch <= T)) fehler("Dieser Tisch existiert nicht.");
+    let phId = null;
     if (sonder) { if (!p.spezial) fehler("Kein Spezialpreis."); }
     else {
       if (D.sonderrunde) fehler("Eine Sonderrunde läuft. Bitte erst abschließen oder abbrechen.");
       if (p.spezial) fehler('"' + p.name + '" ist ein Spezialpreis und nur in einer Sonderrunde vergebbar.');
       const a = aktive(s);
-      if (!a || p.phase_id !== a.id) fehler('"' + p.name + '" gehört nicht zur aktuellen Phase.');
+      if (!a || !waehlbar(s, a, p)) fehler('"' + p.name + '" gehört nicht zur aktuellen Phase.');
+      if (T > 1) {
+        if (tisch == null) fehler("Bitte den Tisch wählen.");
+        const ts = tischStand(s, a);
+        if (ts.stand && !ts.frei) { const e = ts.stand.find((q) => q.tisch === tisch); if (e.fertig) fehler("Tisch " + tisch + " hat in dieser Phase alle " + e.kontingent + " Runden gespielt."); }
+      } else tisch = null;
+      phId = a.id;
     }
     const vorher = aktive(s);
-    const x = { nr: s.siege.length + 1, zeit: new Date().toISOString().slice(0, 19), person_id: pid, preis_id: prid, sonderrunde: !!sonder, importiert: false };
+    const x = { nr: s.siege.length + 1, zeit: new Date().toISOString().slice(0, 19), person_id: pid, preis_id: prid, sonderrunde: !!sonder, importiert: false, phase_id: phId, tisch };
     s.siege.push(x);
     if (sonder) D.sonderrunde = null;
     return fertig(Object.assign(siegDict(s, x), { typ: "sieg", folge: folge(s, vorher) }));
@@ -317,7 +419,7 @@
       j = j ? +j : Math.max(...D.spiele.map((s) => s.jahr)) + 1;
       if (spiel(j)) fehler("Für " + j + " gibt es bereits ein Spiel.");
       const vor = D.spiele.filter((s) => s.jahr < j).sort((a, b) => b.jahr - a.jahr)[0];
-      const n = { jahr: j, datum: null, phasen: [], preise: [], anwesende_ids: [], siege: [] };
+      const n = { jahr: j, datum: null, tische: vor ? vor.tische || 1 : 1, letzte_phase_modus: vor ? vor.letzte_phase_modus || "tisch" : "tisch", phasen: [], preise: [], anwesende_ids: [], siege: [] };
       if (vor) {
         const m = {};
         vor.phasen.forEach((p) => { const q = { id: nid("ph"), name: p.name, reihenfolge: p.reihenfolge }; m[p.id] = q.id; n.phasen.push(q); });
@@ -384,7 +486,14 @@
       s.preise = s.preise.filter((p) => p.id !== id); return fertig();
     },
     preis_nachlegen: (id, n) => { n = +n; if (!(n > 0)) fehler("Die Anzahl zum Nachlegen muss größer als 0 sein."); spiel().preise.find((p) => p.id === id).menge += n; return fertig(); },
-    sieg: (pid, prid) => eintragen(pid, prid, false),
+    sieg: (pid, prid, tisch) => eintragen(pid, prid, false, tisch),
+    spiel_einstellungen_setzen: (tische, modus) => {
+      const s = spiel(); if (!s) fehler("Bitte zuerst ein Spiel wählen.");
+      tische = +tische;
+      if (!(Number.isInteger(tische) && tische >= 1 && tische <= 12)) fehler("Die Anzahl der Tische muss zwischen 1 und 12 liegen.");
+      if (modus !== "tisch" && modus !== "frei") fehler("Unbekannter Modus für die letzte Phase.");
+      s.tische = tische; s.letzte_phase_modus = modus; return fertig();
+    },
     rueckgaengig: () => {
       const s = spiel(); const i = s.siege.map((x) => x.importiert).lastIndexOf(false);
       if (i < 0) fehler("Es gibt keine Eintragung, die rückgängig gemacht werden kann.");
@@ -397,7 +506,7 @@
       D.sonderrunde = id; return fertig();
     },
     sonderrunde_abbrechen: () => { D.sonderrunde = null; return fertig(); },
-    sonderrunde_sieg: (pid) => { if (!D.sonderrunde) fehler("Es läuft keine Sonderrunde."); return eintragen(pid, D.sonderrunde, true); },
+    sonderrunde_sieg: (pid, tisch) => { if (!D.sonderrunde) fehler("Es läuft keine Sonderrunde."); return eintragen(pid, D.sonderrunde, true, tisch); },
     // ---- Neu: Spiele, Siege, Preisnamen, Personen, Bilder, Regeln, Demo
     spiel_loeschen: (j) => {
       j = +j; if (!spiel(j)) fehler("Für " + j + " gibt es kein Spiel.");
@@ -407,19 +516,24 @@
     },
     siege_liste: (j) => {
       const s = spiel(+j); if (!s) fehler("Für " + j + " gibt es kein Spiel.");
-      return s.siege.map((x) => { const d = siegDict(s, x); return { id: x.id, nr: x.nr, zeit: x.zeit || null, person_id: x.person_id, name: d.name, preis_id: x.preis_id, preis_name: d.preis_name, sonderrunde: !!x.sonderrunde, importiert: !!x.importiert }; });
+      return s.siege.map((x) => { const d = siegDict(s, x); return { id: x.id, nr: x.nr, zeit: x.zeit || null, tisch: x.tisch == null ? null : x.tisch, person_id: x.person_id, name: d.name, preis_id: x.preis_id, preis_name: d.preis_name, sonderrunde: !!x.sonderrunde, importiert: !!x.importiert }; });
     },
     // Preise eines Jahres, nur lesend (aendert das aktive Jahr nicht); Form wie paschen/verwaltung.py
     preise_liste: (j) => {
       const s = spiel(+j); if (!s) fehler("Für " + j + " gibt es kein Spiel.");
       return s.preise.map((p) => ({ id: p.id, name: p.name, menge: p.menge, rest: rest(s, p.id), vergeben: vergeben(s, p.id), spezial: !!p.spezial, phase_id: p.phase_id || null, bild: bildKey(p) }));
     },
-    sieg_bearbeiten: (j, sid, pid, prid) => {
+    sieg_bearbeiten: (j, sid, pid, prid, tisch) => {
       const s = spiel(+j); if (!s) fehler("Für " + j + " gibt es kein Spiel.");
       const x = s.siege.find((q) => q.id === sid); if (!x) fehler("Dieser Sieg existiert nicht.");
       if (!person(pid)) fehler("Diese Person existiert nicht.");
       const p = s.preise.find((q) => q.id === prid); if (!p) fehler("Dieser Preis existiert nicht.");
       if (prid !== x.preis_id && rest(s, prid) <= 0) fehler("Der Preis \"" + p.name + "\" ist bereits vergeben.");
+      if (tisch !== undefined) {
+        const t = tisch == null || tisch === "" ? null : +tisch;
+        if (t != null && !(Number.isInteger(t) && t >= 1 && t <= nT(s))) fehler("Dieser Tisch existiert nicht.");
+        x.tisch = t;
+      }
       x.person_id = pid; x.preis_id = prid;
       if (!s.anwesende_ids.includes(pid)) s.anwesende_ids.push(pid);
       return fertig();
@@ -562,7 +676,7 @@
     if (modus === "ende") {
       s.preise.forEach((p) => { for (let i = rest(s, p.id); i > 0; i--) s.siege.push({ nr: s.siege.length + 1, person_id: s.anwesende_ids[Math.floor(Math.pow(Math.random(), 1.7) * 20)], preis_id: p.id, sonderrunde: p.spezial, importiert: false }); });
     }
-    if (modus === "phasenwechsel") D.ereignis = { typ: "phasenwechsel", von_name: "Wurst & Teigwaren", nach_name: "Werbegeschenke", id: 1 };
+    if (modus === "phasenwechsel") D.ereignis = { typ: "phasenwechsel", von_name: "Wurst & Teigwaren", nach_name: "Werbegeschenke", uebertrag: nT(s) > 1 ? 3 : 0, id: 1 };
     if (modus === "sieg") D.ereignis = Object.assign(siegDict(s, s.siege[s.siege.length - 1]), { typ: "sieg", folge: null, id: 1 });
     const z = zustand(true);
     D.ereignis = null;

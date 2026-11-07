@@ -2,8 +2,9 @@
 
 ### Paschen-App
 - Zweck: Desktop-App (Windows) zur Überwachung des jährlichen Vereins-Würfelspiels „Paschen“: Bedienfenster für Spielleiter + Vollbild-Beamer-Anzeige der verfügbaren Preise. Preise als Kategorie + Menge, Phasen mit automatischem Wechsel, Spezialpreise per Sonderrunde, Rückgängig, Statistik über Jahre, Excel-Import/-Export im bisherigen Vereinsformat
-- Technik: Python 3.13 + pywebview (Edge WebView2), UI aus HTML/CSS/JS ohne Build (`ui/`), openpyxl, pytest (96 Tests), PyInstaller onefile (`build.ps1` → `dist\Paschen.exe`, ca. 12 MB)
+- Technik: Python 3.13 + pywebview (Edge WebView2), UI aus HTML/CSS/JS ohne Build (`ui/`), openpyxl, pytest (122 Tests), PyInstaller onefile (`build.ps1` → `dist\Paschen.exe`, ca. 12 MB)
 - Funktionen seit 2026-11-06: Preisbilder (Bildbibliothek am Preisnamen, `bilder\` im Datenordner), Spiel löschen (Rechtsklick/„⋯“ an der Jahreszahl, Sicherung vorher), Demo-Modus in der App (erfunden/Kopie, echter Ordner nie beschrieben), Regel-Show (Folien aus `models.standard_regeln()` nach `Spielanleitung_Paschen.md`, Schleife + Vor/Zurück, Editor), Bereich „Daten“ (Siege/Preisnamen/Personen bearbeiten und zusammenführen, `paschen/verwaltung.py`), „Nachmittag“ statt „Abend“
+- Tische (Daten v3): je Spiel `tische` und `letzte_phase_modus` ("tisch"|"frei"); Kontingent je Tisch und Phase = Mengen // Tische, Rest wandert in die letzte Phase. Alles in `spiel.py` berechnet (`kontingent`, `tisch_stand`, `tisch_frei`, `uebertrag_*`), Grundlage `Sieg.phase_id` + `Sieg.tisch`; `phase_id` nie nachträglich ändern. Beamer-Leiste „Runden je Tisch“ ab 7 Tischen kompakt einzeilig
 - Gestaltung: nach unslop (Richtung in `ui/css/basis.css` oben): Grafit-Flächen, Feuerwehr-Rot #C8102E als einziger Akzent, Schrift Figtree lokal (`ui/fonts/`, OFL), Erkennungsmerkmal rotes Würfelauge `.aug` für „aktiv“, UI-Icons über `uiIcon()` in `shared.js`, Dauern über `dauerMs()`
 - Daten: JSON im frei gewählten Datenordner (Pfad in `%APPDATA%\Paschen\config.json`), atomar geschrieben + 20 Backups
 - Demo-Modus: `ui/control.html?demo` bzw. `ui/beamer.html?demo&ansicht=statistik` über lokalen Server (`.claude/launch.json`, Name „ui-demo“, Port 8765)
@@ -32,5 +33,7 @@
 - Beamer-Namen nach Gesamtlänge UND längstem Wort dimensionieren (Figtree ist breit, sonst Umbruch mitten im Wort).
 - Alltagswörter können zugleich echte Nachnamen sein: Bezeichner, Klassen und Platzhaltertexte immer durch den Namens-Scan prüfen; Treffer nie im Repo benennen oder als Beispiel aufführen.
 - Vor jedem Push muss der Namens-Scan 0 Treffer ergeben – der Push-Befehl wird nur ausgeführt, wenn das Scan-Ergebnis geprüft wurde (nicht per `&&` an `tail` hängen).
+- Der Browser-Mock (`ui/js/mock.js`) liefert dieselben Felder mit derselben Bedeutung wie die echte Api; nach jeder Vertragsänderung Feld für Feld gegen `paschen/api.py _zustand` abgleichen und die Oberfläche einmal gegen die echte Api prüfen (Echt-Start).
+- Neue Beamer-Leisten mit `?demo&extrem` und der höchsten erlaubten Anzahl (z. B. 12 Tische) bei 1280×720 prüfen: alle Preis-Kacheln müssen sichtbar bleiben.
 - Bild-Dateinamen aus der JSON nie ungeprüft als Pfad verwenden: Regex `^[a-z0-9-]+-[0-9a-f]{6}\.(jpg|png)$` plus Signaturprüfung beim Speichern.
 - Stand: 2026-11-06

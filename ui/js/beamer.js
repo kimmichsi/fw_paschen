@@ -58,7 +58,7 @@
   }
 
   // ------------------------------------------------------------------ Kacheln (an Ort und Stelle aktualisiert)
-  function kachelnAktualisieren(preise) {
+  function kachelnAktualisieren(preise, phasen) {
     const box = $("kacheln");
     const ids = preise.map((p) => p.id);
     box.classList.toggle("viele", preise.length >= 10);
@@ -69,7 +69,7 @@
         el = document.createElement("div");
         el.className = "kachel";
         el.dataset.id = p.id;
-        el.innerHTML = '<span class="ik"></span><div class="name"></div><div class="rest"></div><div class="balken"><i></i></div>';
+        el.innerHTML = '<span class="ik"></span><div class="name"></div><div class="rest"></div><div class="herkunft"></div><div class="balken"><i></i></div>';
         box.appendChild(el);
       }
       if (box.children[i] !== el) box.insertBefore(el, box.children[i] || null);
@@ -94,6 +94,10 @@
         el._rest = restHtml;
         if (war) zahlTick(re.querySelector("b") || re);
       }
+      // Uebertragene Preise stehen in der letzten Phase normal da, nur mit einem ruhigen Vermerk
+      const von = p.uebertragen ? (phasen || []).findIndex((ph) => ph.id === p.phase_id) + 1 : 0;
+      el.classList.toggle("uebertragen", von > 0);
+      setze(el.querySelector(".herkunft"), von > 0 ? "aus Phase " + von : "");
       el.querySelector(".balken i").style.transform = "scaleX(" + (p.menge ? Math.max(0, Math.min(1, p.rest / p.menge)) : 0) + ")";
       el.classList.toggle("leer", p.rest === 0);
       el.classList.toggle("wenig", p.rest > 0 && p.rest <= Math.max(1, Math.round(p.menge * 0.2)));
@@ -131,19 +135,35 @@
     else if (ansicht === "statistik") zeichneStatistik(z);
   }
 
+  // Runden je Tisch der aktiven Phase (nur bei mehr als 1 Tisch). Kein Wuerfelauge: alle Tische spielen gleichzeitig,
+  // "aktiv" ist hier die Phase (traegt das Auge im Phasenkopf); ein Auge je Tisch waere 4 bis 12 gleichzeitige Markierungen.
+  function tischeHtml(s, aktiv) {
+    const T = s.tische || 1;
+    if (T < 2) return "";
+    const stand = s.tisch_stand || null;
+    const eins = (t) => "<div class='tische-eins'><span class='etikett'>Runden je Tisch</span><span class='tische-frei'>" + t + "</span></div>";
+    if (s.tisch_frei) return eins("Alle Kontingente gespielt · Rest frei ausgespielt");
+    if (!stand || !stand.length) return aktiv.letzte && s.letzte_phase_modus === "frei" ? eins("Frei – wer zuerst kommt") : "";
+    // Bis 6 Tische: "Tisch 3" und "noch 5"; ab 7 kompakt in EINER Zeile: "T3" und die Zahl (fertig = Haken), damit bis 12 Tische alle Kacheln sichtbar bleiben
+    const dicht = stand.length > 6;
+    const zellen = stand.map((e) => "<div class='tisch" + (e.fertig ? " fertig" : "") + "'><span class='t-name'>" + (dicht ? "T" : "Tisch ") + e.tisch + "</span>" +
+      (e.fertig ? "<span class='t-wert'>" + uiIcon("haken") + (dicht ? "" : "fertig") + "</span>" : "<span class='t-wert'>" + (dicht ? "<b>" + zahl(e.noch) + "</b>" : "noch <b>" + zahl(e.noch) + "</b>") + "</span>") + "</div>");
+    return "<div class='tische-raster" + (dicht ? " dicht" : "") + "' style='--sp:" + (zellen.length + 1) + ";--n:" + zellen.length + "'><span class='etikett'>Runden je Tisch</span>" + zellen.join("") + "</div>";
+  }
+
   function zeichneSpiel(z) {
     const s = z.spiel;
     const aktiv = s.phasen.find((p) => p.aktiv);
     // Kopf der aktiven Phase
     if (aktiv) {
       setze($("phasenkopf"), "<span class='aug' aria-hidden='true'></span><h2" + (aktiv.name.length > 34 ? " class='lang'" : "") + ">" + esc(aktiv.name) + "</h2><span>Phase " + s.phase_nr + " von " + s.phasen_anzahl + "</span>");
-      const preise = s.preise.filter((p) => p.phase_id === aktiv.id && !p.spezial);
-      kachelnAktualisieren(preise);
+      const preise = s.preise.filter((p) => !p.spezial && (p.phase_id === aktiv.id || (aktiv.letzte && p.uebertragen)));
+      kachelnAktualisieren(preise, s.phasen);
     } else {
       setze($("phasenkopf"), s.spezialpreise_offen.length ? "<h2>Alle Phasen beendet</h2>"
         : s.preise.length ? "<h2>Alle Preise sind vergeben</h2>"
         : "<h2>Noch keine Preise angelegt</h2>");
-      kachelnAktualisieren([]);
+      kachelnAktualisieren([], s.phasen);
       if (!s.preise.length && !$("kacheln").querySelector(".leer-text")) {
         const h = document.createElement("p");
         h.className = "leer-text";
@@ -152,6 +172,7 @@
         $("kacheln").appendChild(h);
       }
     }
+    setze($("tische"), aktiv ? tischeHtml(s, aktiv) : "");
     // Spezialpreise
     setze($("spezial"), s.spezialpreise_offen.map((p) =>
       '<div class="spezial">' + bildIcon(p.bild, p.icon) + "<div><div class='hinweis'>Sonderrunde folgt</div><div class='name'>" + esc(p.name) +
@@ -166,7 +187,7 @@
     // Letzter Gewinner
     const l = s.letzter_sieg;
     setze($("letzter"), "<p class='etikett'>Letzter Gewinner</p>" + (l
-      ? kurzHtml(l.name, "wer drei" + (l.name.length > 24 ? " lang" : "")) + "<div class='was" + (l.sonderrunde ? " sonder" : "") + "'>" + bildIcon(l.bild, l.icon) + "<span>" + esc(l.preis_name) + "</span></div><div class='runde'>Runde " + zahl(l.nr) + "</div>"
+      ? kurzHtml(l.name, "wer drei" + (l.name.length > 24 ? " lang" : "")) + "<div class='was" + (l.sonderrunde ? " sonder" : "") + "'>" + bildIcon(l.bild, l.icon) + "<span>" + esc(l.preis_name) + "</span></div><div class='runde'>Runde " + zahl(l.nr) + (l.tisch ? " · Tisch " + l.tisch : "") + "</div>"
       : "<div class='keiner'>Noch kein Gewinner</div>"));
 
     // Top 10
@@ -204,12 +225,13 @@
   function overlayKarte(e) {
     if (e.typ === "sieg") {
       // Drei Einsen schlagen alles: drei rote Wuerfel als Moment des Siegs
-      return { html: wuerfelReihe([1, 1, 1]) + "<div class='klein'>" + (e.nr ? "Runde " + zahl(e.nr) : "Sieg") + "</div><div class='wer" + laenge(e.name) + "'>" + esc(e.name) + "</div><div class='was" + (e.sonderrunde ? " sonder" : "") + (e.preis_name.length > 28 ? " lang" : "") + "'>" +
+      return { html: wuerfelReihe([1, 1, 1]) + "<div class='klein'>" + (e.nr ? "Runde " + zahl(e.nr) : "Sieg") + (e.tisch ? " · Tisch " + e.tisch : "") + "</div><div class='wer" + laenge(e.name) + "'>" + esc(e.name) + "</div><div class='was" + (e.sonderrunde ? " sonder" : "") + (e.preis_name.length > 28 ? " lang" : "") + "'>" +
         bildIcon(e.bild, e.icon) + "<span>" + (e.sonderrunde ? "gewinnt " : "wählt ") + esc(e.preis_name) + "</span></div>", ms: 4000, klasse: "" };
     }
     if (e.typ === "phasenwechsel") {
       const weiter = e.nach_name ? "weiter mit <b>" + esc(e.nach_name) + "</b>" : "Sonderrunde folgt";
-      return { html: "<div class='klein'>Phasenwechsel</div><div class='wer" + laenge(e.von_name || "") + "'>" + (e.von_name ? esc(e.von_name) + " beendet" : "Phase beendet") + "</div><div class='weiter" + ((e.nach_name || "").length > 28 ? " lang" : "") + "'>" + weiter + "</div>", ms: 5000, klasse: "wechsel" };
+      return { html: "<div class='klein'>Phasenwechsel</div><div class='wer" + laenge(e.von_name || "") + "'>" + (e.von_name ? esc(e.von_name) + " beendet" : "Phase beendet") + "</div><div class='weiter" + ((e.nach_name || "").length > 28 ? " lang" : "") + "'>" + weiter + "</div>" +
+        (e.uebertrag > 0 ? "<div class='uebertrag'>" + zahl(e.uebertrag) + " " + plural(e.uebertrag, "Preis wandert", "Preise wandern") + " in die letzte Phase</div>" : ""), ms: 5000, klasse: "wechsel" };
     }
     return null;
   }

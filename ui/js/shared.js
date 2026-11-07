@@ -103,7 +103,7 @@
     return {
       nachmittag: nachmittag,
       teilnahmen: liste((r.teilnahmen || []).slice(0, 5), (x) => kurzHtml(x.name) + "<b>" + zahl(x.teilnahmen) + "×</b>"),
-      pechvogel: '<p class="unterzeile">Teilnahmen ohne Sieg</p>' + liste((r.pechvogel || []).slice(0, 5), (x) => kurzHtml(x.name) + "<b>" + zahl(x.teilnahmen) + "×</b>"),
+      pechvogel: '<p class="unterzeile">Teilnehmer ohne Sieg</p>' + liste((r.pechvogel || []).slice(0, 5), (x) => kurzHtml(x.name) + "<b>" + zahl(x.teilnahmen) + "× dabei</b>"),
     };
   };
 

@@ -32,7 +32,7 @@ def test_hilfen(bestand):
 
 def test_laden_ohne_datei_ist_leer(tmp_path):
     b = store.laden(tmp_path)
-    assert b.personen == [] and b.spiele == [] and b.version == 2
+    assert b.personen == [] and b.spiele == [] and b.version == 3
 
 
 def test_speichern_laden_und_utf8(tmp_path):

@@ -308,3 +308,32 @@ table.da-tabelle td.umbruch { white-space: normal; max-width: 288px; }
 table.da-tabelle td.aktionen { text-align: right; }
 table.da-tabelle td.aktionen .knopf { margin-left: 4px; }
 table.da-tabelle thead th { position: sticky; top: 0; background: var(--flaeche); z-index: 1; }
+
+/* ================================================================= Tische (Spiel und Vorbereitung) */
+/* Ablauf Name, Tisch, Preis: der fehlende Schritt ist umgekehrt dargestellt, erledigte tragen einen Haken */
+.schritte { list-style: none; margin: 0 0 12px; padding: 0; display: flex; gap: 8px; }
+.schritte li { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 0 1 auto; height: 32px; padding: 0 12px 0 8px; border: 1px solid var(--rand); border-radius: var(--r-1); color: var(--text-leise); font-size: 13px; font-weight: 500; }
+.schritt-nr { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1px solid currentColor; border-radius: 50%; font-size: 12px; line-height: 16px; font-variant-numeric: tabular-nums; }
+.schritt-nr .icon { font-size: 12px; }
+.schritt-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.schritte li.erledigt { background: var(--flaeche-3); border-color: var(--rand-stark); color: var(--text); }
+.schritte li.jetzt { background: var(--invers); border-color: var(--invers); color: var(--invers-text); }
+.tisch-block .spalten-kopf { margin-bottom: 8px; }
+.tisch-block .tisch-info { margin-left: auto; text-align: right; }
+.tisch-knoepfe { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; margin-bottom: 16px; }
+.tisch-knopf { display: grid; justify-items: start; align-content: center; min-height: 48px; padding: 8px 12px; text-align: left; background: var(--flaeche-2); border: 1px solid var(--rand); border-radius: var(--r-1); font-size: 15px; line-height: 20px; font-weight: 500; min-width: 0;
+  transition: background-color var(--dauer-farbe) var(--ease-out), border-color var(--dauer-farbe) var(--ease-out), color var(--dauer-farbe) var(--ease-out), transform var(--dauer-druck) var(--ease-out); }
+.tisch-knopf small { font-size: 12px; line-height: 16px; font-weight: 400; color: var(--text-leise); font-variant-numeric: tabular-nums; }
+.tisch-knopf:active:not(:disabled) { transform: scale(.97); }
+.tisch-knopf.gewaehlt { background: var(--invers); border-color: var(--invers); color: var(--invers-text); }
+.tisch-knopf.gewaehlt small { color: rgba(20, 20, 21, .7); }
+.tisch-knopf:disabled { opacity: .4; cursor: default; }
+@media (hover: hover) and (pointer: fine) { .tisch-knopf:hover:not(:disabled):not(.gewaehlt) { border-color: var(--rand-stark); } }
+@media (prefers-reduced-motion: reduce) { .tisch-knopf:active { transform: none !important; } }
+.preis-kachel .herkunft { font-size: 12px; line-height: 16px; color: var(--text-leise); }
+.tische-liste { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; font-size: 13px; line-height: 20px; color: var(--text-leise); overflow-wrap: anywhere; }
+.tische-liste:empty { display: none; }
+.tische-liste b { color: var(--text); font-weight: 500; }
+#vb-tische-karte .feld-inline input { width: 80px; }
+#vb-tische-karte .feld { margin: 16px 0 12px; }
+#vb-tische-karte p { margin: 8px 0 0; }

@@ -65,6 +65,20 @@
               <button class="knopf" type="submit">Phase hinzufügen</button>
             </form>
           </div>
+          <div class="karte" id="vb-tische-karte">
+            <h2>Tische</h2>
+            <label class="feld-inline" for="vb-tische">Anzahl Tische <input type="number" id="vb-tische" min="1" max="12" step="1"></label>
+            <p class="klein leise">1 heißt ohne Tische, es gilt: wer zuerst kommt. Bei mehreren Tischen spielt jeder Tisch je Phase gleich viele Runden.</p>
+            <div class="feld" id="vb-modus-feld">
+              <span>Letzte Phase</span>
+              <div class="wahl" role="radiogroup" aria-label="Letzte Phase">
+                <label class="wahl-karte"><input type="radio" name="vb-modus" value="tisch"><span><b>Gleichmäßig je Tisch</b><small>Auch die letzte Phase wird auf die Tische verteilt. Was nicht aufgeht, wird am Ende frei ausgespielt.</small></span></label>
+                <label class="wahl-karte"><input type="radio" name="vb-modus" value="frei"><span><b>Frei – wer zuerst kommt</b><small>In der letzten Phase gibt es kein Kontingent je Tisch.</small></span></label>
+              </div>
+            </div>
+            <p class="klein leise" id="vb-tische-beispiel">Beispiel: 42 Preise bei 4 Tischen ergeben je Tisch 10 Runden. Die 2 übrigen Preise wandern in die letzte Phase.</p>
+            <ul class="tische-liste" id="vb-tische-info"></ul>
+          </div>
           <div class="karte">
             <div class="kopfzeile"><h2>Preise</h2><button class="knopf primaer" data-act="preis-neu">Preis hinzufügen</button></div>
             <div id="vb-preise"></div>
@@ -99,6 +113,8 @@
         <div id="sp-namen" class="namen gross"></div>
       </div>
       <div class="spiel-spalte">
+        <ol id="sp-schritte" class="schritte" aria-label="Ablauf einer Eintragung" hidden></ol>
+        <div id="sp-tisch" class="tisch-block" hidden></div>
         <div class="spalten-kopf"><h2 id="sp-titel-preis">2 · Welcher Preis?</h2></div>
         <div id="sp-sonder-banner" class="sonder-banner" hidden></div>
         <div id="sp-phasenhinweis" class="klein leise"></div>

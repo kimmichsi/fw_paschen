@@ -1,7 +1,7 @@
 """Erfundene Demo-Daten (nur erfundene, seltene Namen; nie echte Personen).
 
 ``erzeugen()`` baut einen kompletten Datenbestand: ca. 30 Personen, drei Vorjahre mit Siegen,
-das aktuelle Jahr mit zwei Phasen, einem Spezialpreis und einigen Siegen sowie den Regel-Folien aus ``standard_regeln()``.
+das aktuelle Jahr mit zwei Phasen, 4 Tischen (Phase 1: 42 Preise, also 2 Preise Uebertrag), einem Spezialpreis und einigen Siegen sowie den Regel-Folien aus ``standard_regeln()``.
 """
 from __future__ import annotations
 
@@ -24,10 +24,10 @@ NACHNAMEN = (
 
 # (Name, Icon, Menge, Phase-Nr)
 PREISE = [
-    ("Dose Bierschinken", "dose", 8, 1),
-    ("Ringwurst", "ring", 8, 1),
-    ("Teigwaren", "teig", 6, 1),
-    ("Honig", "glas", 5, 1),
+    ("Dose Bierschinken", "dose", 12, 1),
+    ("Ringwurst", "ring", 12, 1),
+    ("Teigwaren", "teig", 10, 1),
+    ("Honig", "glas", 8, 1),
     ("Tasse", "geschenk", 6, 2),
     ("Kugelschreiber-Set", "geschenk", 5, 2),
     ("Flaschenöffner", "geschenk", 4, 2),
@@ -74,12 +74,13 @@ def erzeugen(jahr: int | None = None) -> Datenbestand:
 
     s = _spiel_mit_preisen(jahr)
     s.anwesende_ids = r.sample(ids, 24)
+    s.tische = 4  # 42 Preise in Phase 1: Kontingent 10 je Tisch, 2 Preise bleiben fuer die letzte Phase
     b.spiele.append(s)
-    for _ in range(9):  # einige Siege in Phase 1 vorspielen
+    for i in range(14):  # einige Siege in Phase 1 vorspielen, reihum an den Tischen
         waehlbar = sp.waehlbare_preise(s)
         if not waehlbar:
             break
-        sp.sieg_eintragen(s, r.choice(s.anwesende_ids), r.choice(waehlbar).id)
+        sp.sieg_eintragen(s, r.choice(s.anwesende_ids), r.choice(waehlbar).id, tisch=i % 4 + 1)
 
     b.regeln = standard_regeln()
     return b

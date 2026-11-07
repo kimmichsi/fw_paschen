@@ -163,9 +163,10 @@ class Api:
             "icon": preis.icon if preis else "",
             "bild": self._bild_von(preis.name) if preis else None,
             "sonderrunde": sieg.sonderrunde,
+            "tisch": sieg.tisch,
         }
 
-    def _preis_dict(self, s: Spiel, p, aktiv_id) -> dict:
+    def _preis_dict(self, s: Spiel, p, waehlbar_ids, uebertragen_ids) -> dict:
         rest = sp.rest(s, p.id)
         return {
             "id": p.id,
@@ -177,7 +178,8 @@ class Api:
             "spezial": p.spezial,
             "rest": rest,
             "vergeben": p.menge - rest,
-            "waehlbar": (not p.spezial) and rest > 0 and p.phase_id is not None and p.phase_id == aktiv_id,
+            "waehlbar": p.id in waehlbar_ids,
+            "uebertragen": p.id in uebertragen_ids,
         }
 
     # ------------------------------------------------------------ Bilder / Regeln (intern)
@@ -240,6 +242,7 @@ class Api:
                     "teilnehmer": len(x.anwesende_ids),
                     "siege": len(x.siege),
                     "beendet": sp.ist_beendet(x),
+                    "tische": x.tische,
                 }
                 for x in sorted(b.spiele, key=lambda x: x.jahr)
             ],
@@ -280,11 +283,27 @@ class Api:
         aktiv = sp.aktive_phase(s)
         aktiv_id = aktiv.id if aktiv else None
         phasen_sortiert = sorted(s.phasen, key=lambda p: p.reihenfolge)
+        letzte_id = phasen_sortiert[-1].id if phasen_sortiert else None
+        waehlbar_ids = {p.id for p in sp.waehlbare_preise(s)}
+        uebertragen_ids = {p.id for p in sp.uebertragene_preise(s)}
+        uebertrag = sp.uebertrag_gesamt(s)
         phasen = []
         for ph in phasen_sortiert:
             ps = [p for p in s.preise if p.phase_id == ph.id and not p.spezial]
-            rest = sum(sp.rest(s, p.id) for p in ps)
-            gesamt = sum(p.menge for p in ps)
+            eigene_menge = sum(p.menge for p in ps)
+            fertig = sp.phase_fertig(s, ph)
+            u = sp.uebertrag_phase(s, ph)
+            if ph.id == letzte_id:
+                # letzte Phase zaehlt den Uebertrag mit
+                pool = [p for p in s.preise if p.id in ({q.id for q in ps} | uebertragen_ids)]
+                rest = sum(sp.rest(s, p.id) for p in pool)
+                gesamt = eigene_menge + uebertrag
+            elif fertig:
+                rest = 0  # fertige fruehere Phase: Restbestand ist uebertragen
+                gesamt = eigene_menge - u
+            else:
+                rest = sum(sp.rest(s, p.id) for p in ps)
+                gesamt = eigene_menge
             phasen.append(
                 {
                     "id": ph.id,
@@ -293,16 +312,18 @@ class Api:
                     "rest": rest,
                     "gesamt": gesamt,
                     "aktiv": ph.id == aktiv_id,
-                    "abgeschlossen": gesamt > 0 and rest == 0,
+                    "abgeschlossen": fertig and gesamt + u > 0,
+                    "uebertragen": u,
+                    "letzte": ph.id == letzte_id,
                     "preise": [p.id for p in ps],
                 }
             )
         phase_nr = next((i + 1 for i, ph in enumerate(phasen_sortiert) if ph.id == aktiv_id), None)
-        preise = [self._preis_dict(s, p, aktiv_id) for p in s.preise]
+        preise = [self._preis_dict(s, p, waehlbar_ids, uebertragen_ids) for p in s.preise]
         nicht_importiert = [x for x in s.siege if not x.importiert]
         letzter = self._sieg_dict(s, nicht_importiert[-1]) if nicht_importiert else None
         beendet = sp.ist_beendet(s)
-        spezial_offen = [self._preis_dict(s, p, aktiv_id) for p in sp.spezialpreise_offen(s)]
+        spezial_offen = [self._preis_dict(s, p, waehlbar_ids, uebertragen_ids) for p in sp.spezialpreise_offen(s)]
 
         sr = None
         if self._sonderrunde:
@@ -333,6 +354,11 @@ class Api:
             "beendet": beendet,
             "top10": statistik.top10_nachmittag(b, s.jahr),
             "spezialpreise_offen": spezial_offen,
+            "tische": s.tische,
+            "letzte_phase_modus": s.letzte_phase_modus,
+            "tisch_stand": sp.tisch_stand(s),
+            "tisch_frei": sp.tisch_frei(s),
+            "uebertrag": uebertrag,
         }
         return z
 
@@ -415,6 +441,12 @@ class Api:
         sp.neues_spiel_aus_vorjahr(self._bestand, jahr)
         self._jahr = jahr
         self._sonderrunde = None
+        return self._fertig()
+
+    @_aktion
+    def spiel_einstellungen_setzen(self, tische: int, letzte_phase_modus: str) -> dict:
+        """Anzahl Tische (1 bis 12) und Regel der letzten Phase ("tisch" | "frei") des gewaehlten Spiels."""
+        verwaltung.spiel_einstellungen_setzen(self._spiel(), tische, letzte_phase_modus)
         return self._fertig()
 
     # ------------------------------------------------------------ Personen
@@ -502,33 +534,37 @@ class Api:
         return self._fertig()
 
     # ------------------------------------------------------------ Spiel
-    def _wechsel_ereignis(self, s: Spiel, vorher_id: Optional[str], sieg: Optional[dict]) -> Optional[dict]:
+    def _wechsel_ereignis(
+        self, s: Spiel, vorher_id: Optional[str], sieg: Optional[dict], vorher_uebertrag: int = 0
+    ) -> Optional[dict]:
         """Baut das Ereignis fuer den Beamer: Sieg (mit Folge) oder reiner Phasenwechsel."""
         folge = None
         if sp.ist_beendet(s):
             folge = {"typ": "ende"}
         else:
-            w = sp.phasenwechsel_erkennen(vorher_id, s)
+            w = sp.phasenwechsel_erkennen(vorher_id, s, vorher_uebertrag)
             if w is not None:
                 von = s.phase(w["von"])
                 folge = {
                     "typ": "phasenwechsel",
                     "von_name": von.name if von else None,
                     "nach_name": w["nach_name"],
+                    "uebertrag": w["uebertrag"],
                 }
         if sieg is not None:
             return dict(sieg, typ="sieg", folge=folge)
         return folge
 
     @_aktion
-    def sieg(self, person_id: str, preis_id: str) -> dict:
+    def sieg(self, person_id: str, preis_id: str, tisch: Optional[int] = None) -> dict:
         s = self._spiel()
         if self._sonderrunde:
             raise RegelFehler("Eine Sonderrunde laeuft. Bitte erst abschliessen oder abbrechen.")
         vorher = sp.aktive_phase(s)
-        sg = sp.sieg_eintragen(s, person_id, preis_id)
+        vorher_u = sp.uebertrag_gesamt(s)
+        sg = sp.sieg_eintragen(s, person_id, preis_id, tisch=tisch)
         info = self._sieg_dict(s, sg)
-        return self._fertig(self._wechsel_ereignis(s, vorher.id if vorher else None, info))
+        return self._fertig(self._wechsel_ereignis(s, vorher.id if vorher else None, info, vorher_u))
 
     @_aktion
     def rueckgaengig(self) -> dict:
@@ -555,15 +591,16 @@ class Api:
         return self._fertig()
 
     @_aktion
-    def sonderrunde_sieg(self, person_id: str) -> dict:
+    def sonderrunde_sieg(self, person_id: str, tisch: Optional[int] = None) -> dict:
         s = self._spiel()
         if not self._sonderrunde:
             raise RegelFehler("Es laeuft keine Sonderrunde.")
         vorher = sp.aktive_phase(s)
-        sg = sp.sieg_eintragen(s, person_id, self._sonderrunde, sonderrunde=True)
+        vorher_u = sp.uebertrag_gesamt(s)
+        sg = sp.sieg_eintragen(s, person_id, self._sonderrunde, sonderrunde=True, tisch=tisch)
         self._sonderrunde = None
         info = self._sieg_dict(s, sg)
-        return self._fertig(self._wechsel_ereignis(s, vorher.id if vorher else None, info))
+        return self._fertig(self._wechsel_ereignis(s, vorher.id if vorher else None, info, vorher_u))
 
     # ------------------------------------------------------------ Beamer
     @_aktion
@@ -652,8 +689,8 @@ class Api:
         return verwaltung.preise_liste(self._bestand, int(jahr), self._bild_von)
 
     @_aktion
-    def sieg_bearbeiten(self, jahr: int, sieg_id: str, person_id: str, preis_id: str) -> dict:
-        verwaltung.sieg_bearbeiten(self._bestand, int(jahr), sieg_id, person_id, preis_id)
+    def sieg_bearbeiten(self, jahr: int, sieg_id: str, person_id: str, preis_id: str, tisch=verwaltung._UNVERAENDERT) -> dict:
+        verwaltung.sieg_bearbeiten(self._bestand, int(jahr), sieg_id, person_id, preis_id, tisch)
         return self._fertig()
 
     @_aktion

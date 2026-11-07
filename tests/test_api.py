@@ -98,7 +98,7 @@ def test_phasenwechsel_ereignis_und_ende(api):
     ok(api.sieg(erika, ids["Wurst"]))
     z = ok(api.sieg(erika, ids["Teig"]))
     f = z["ereignis"]["folge"]
-    assert f == {"typ": "phasenwechsel", "von_name": "Phase 1", "nach_name": "Phase 2"}
+    assert f == {"typ": "phasenwechsel", "von_name": "Phase 1", "nach_name": "Phase 2", "uebertrag": 0}
     assert z["spiel"]["aktive_phase_name"] == "Phase 2" and z["spiel"]["phase_nr"] == 2
     z = ok(api.sieg(erika, ids["Tasse"]))
     assert z["ereignis"]["folge"]["typ"] == "phasenwechsel" and z["ereignis"]["folge"]["nach_name"] is None

@@ -273,8 +273,8 @@
     da.siege = Array.isArray(r) ? r : [];
     $("da-info").textContent = anzahl(da.siege.length, "Sieg", "Siege");
     $("da-liste").innerHTML = da.siege.length
-      ? '<table class="daten da-tabelle"><thead><tr><th>Runde</th><th>Zeit</th><th>Gewinner</th><th>Preis</th><th>Kennzeichen</th><th></th></tr></thead><tbody>' +
-        da.siege.map((s) => "<tr><td>" + (s.nr ? zahl(s.nr) : "–") + "</td><td>" + zeitText(s.zeit) + '</td><td class="umbruch">' + kurzHtml(s.name) + '</td><td class="umbruch">' + kurzHtml(s.preis_name) + "</td><td>" +
+      ? '<table class="daten da-tabelle"><thead><tr><th>Runde</th><th>Zeit</th><th>Gewinner</th><th>Preis</th><th>Tisch</th><th>Kennzeichen</th><th></th></tr></thead><tbody>' +
+        da.siege.map((s) => "<tr><td>" + (s.nr ? zahl(s.nr) : "–") + "</td><td>" + zeitText(s.zeit) + '</td><td class="umbruch">' + kurzHtml(s.name) + '</td><td class="umbruch">' + kurzHtml(s.preis_name) + "</td><td>" + (s.tisch ? zahl(s.tisch) : "–") + "</td><td>" +
           (s.sonderrunde ? '<span class="tag">Sonderrunde</span> ' : "") + (s.importiert ? '<span class="tag">importiert</span>' : "") + '</td><td class="aktionen">' +
           '<button class="knopf klein" data-act="sieg-bearbeiten" data-id="' + esc(s.id) + '">Bearbeiten</button> <button class="knopf klein gefahr" data-act="sieg-loeschen" data-id="' + esc(s.id) + '">Löschen</button></td></tr>').join("") + "</tbody></table>"
       : '<p class="leer-text">In diesem Jahr gibt es noch keine Siege</p>';
@@ -286,6 +286,14 @@
     // Preise und Bestand des gewählten Jahres kommen lesend aus der Api; das aktive Spiel bleibt unverändert
     const preise = await CTRL.lies("preise_liste", da.jahr);
     if (!Array.isArray(preise)) return;
+    // Tischanzahl des Jahres: aus der Jahresliste, sonst aus dem aktiven Spiel, sonst 1 bis 12 anbieten
+    const Zx = Zn();
+    const jInfo = (Zx.jahre_info || []).find((j) => j.jahr === da.jahr);
+    let tn = jInfo && jInfo.tische ? jInfo.tische : Zx.spiel && Zx.jahr === da.jahr && Zx.spiel.tische ? Zx.spiel.tische : 12;
+    const tischWeg = !!sieg.tisch && sieg.tisch > tn;   // Tischanzahl wurde verringert: alten Tisch nicht vorwaehlen
+    const tischFeld = tn > 1 || !!sieg.tisch;
+    let tischOpt = '<option value="">–</option>';
+    for (let n = 1; n <= tn; n++) tischOpt += '<option value="' + n + '"' + (sieg.tisch === n ? " selected" : "") + ">Tisch " + n + "</option>";
     CTRL.openModal(
       "<h2>Sieg bearbeiten</h2><p class=\"leise\">" + siegBezeichnung(sieg) + " im Spiel " + da.jahr + "</p>" +
       '<div class="feld"><span>Gewinner</span>' + personHtml("sd") + "</div>" +
@@ -294,6 +302,7 @@
         const frei = aktuell || p.rest > 0;
         return '<option value="' + esc(p.id) + '"' + (aktuell ? " selected" : "") + (frei ? "" : " disabled") + ">" + esc(p.name) + " (" + (aktuell ? "aktuell, " : "") + "noch " + zahl(p.rest) + " von " + zahl(p.menge) + " übrig)" + "</option>";
       }).join("") + "</select></label>" +
+      (tischFeld ? '<label class="feld"><span>Tisch</span><select id="sd-tisch">' + tischOpt + "</select>" + (tischWeg ? '<span class="hinweis-box">Tisch ' + sieg.tisch + " gibt es nicht mehr. Bitte einen Tisch wählen oder leer lassen.</span>" : "") + "</label>" : "") +
       '<div class="modal-aktionen"><button class="knopf" data-m="abbruch">Abbrechen</button><button class="knopf primaer" data-m="ok">Speichern</button></div>');
     const person = bindPerson("sd", null, sieg.person_id);
     $("modal-karte").onclick = async (e) => {
@@ -301,7 +310,8 @@
       if (!b) return;
       if (b.dataset.m === "abbruch") { $("modal-karte").onclick = null; CTRL.closeModal(); return; }
       if (CTRL.istLaufend()) return;
-      const r = await CTRL.call("sieg_bearbeiten", da.jahr, sieg.id, person(), $("sd-preis").value);
+      const tw = $("sd-tisch") ? $("sd-tisch").value : "";
+      const r = await CTRL.call("sieg_bearbeiten", da.jahr, sieg.id, person(), $("sd-preis").value, tw ? parseInt(tw, 10) : (tischFeld ? null : sieg.tisch || null));
       if (r) { $("modal-karte").onclick = null; CTRL.closeModal(); CTRL.toast("Sieg geändert"); }
     };
   }

@@ -253,7 +253,7 @@ body:not([data-design="hell"]) .kachel.leer { opacity: .45; background: transpar
 .rekord ul.viele { font-size: 1rem; }
 .rekord p, .rekord li { overflow-wrap: anywhere; }
 .rekord b { color: var(--text); font-weight: 700; }
-.rekord-zwei { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.2rem; }
+.rekord-zwei { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
 /* Viele Jahre: rechte Spalte noch dichter, damit alle vier Karten ins Bild passen (Namen bleiben zweizeilig) */
 .statistik.eng .stat-rechts { gap: .6rem; }
 .statistik.eng .stat-rechts .karte { padding-top: .6rem; padding-bottom: .6rem; }
@@ -360,3 +360,47 @@ body.ist-demo #buehne { padding-top: 4rem; }
   .regel-titel { font-size: 4.4rem; }
   .regel-text { font-size: 2.2rem; }
 }
+
+/* ================================================================= Runden je Tisch (Spielansicht)
+   Ruhige Leiste unter dem Phasenkopf, nur bei mehr als einem Tisch. Kein Wuerfelauge: alle Tische spielen gleichzeitig,
+   "aktiv" ist die Phase (Auge im Phasenkopf). Fertige Tische: gestrichelt mit Haken, Zahlen bleiben dunkel (kein Text heller als #3A3A3A). */
+.tische-leiste:empty { display: none; }
+.tische-raster { display: grid; grid-template-columns: repeat(var(--sp, 5), minmax(0, 1fr)); gap: .6rem; align-items: stretch; }
+.tische-raster .etikett { margin: 0; align-self: center; font-size: 1.15rem; line-height: 1.2; }
+.tisch { display: flex; flex-direction: column; justify-content: center; padding: .4rem .8rem; min-width: 0;
+  background: var(--flaeche-2); border: var(--kante) solid var(--kante-farbe); border-radius: var(--r-2); }
+.tisch .t-name { font-size: 1.1rem; line-height: 1.15; font-weight: 600; color: var(--text-leise); white-space: nowrap; }
+.tisch .t-wert { display: flex; align-items: center; gap: .4rem; font-size: 1.4rem; line-height: 1.15; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tisch .t-wert b { font-size: 1.7rem; font-weight: 700; }
+.tisch .t-wert .icon { font-size: 1.3rem; }
+.tisch.fertig { border-style: dashed; background: transparent; }
+.tisch.fertig .t-wert { color: var(--text-leise); }
+.tische-raster.dicht { grid-template-columns: 7rem repeat(var(--n), minmax(0, 1fr)); gap: .4rem; }
+.dicht .etikett { font-size: 1rem; }
+.dicht .tisch { padding: .2rem .2rem .3rem; align-items: center; border-radius: var(--r-1); }
+.dicht .tisch .t-name { font-size: 1rem; }
+.dicht .tisch .t-wert { justify-content: center; font-size: 1.5rem; font-weight: 700; }
+.dicht .tisch .t-wert .icon { font-size: 1.5rem; }
+.tische-eins { display: flex; align-items: baseline; gap: 1.2rem; flex-wrap: wrap; }
+.tische-eins .etikett { margin: 0; }
+.tische-frei { font-size: 1.5rem; font-weight: 600; }
+
+/* Uebertragene Preise in der letzten Phase: normale Kachel mit ruhigem Vermerk */
+.kachel .herkunft { display: none; }
+.kacheln:not(.viele) .kachel.uebertragen { grid-template-rows: 1fr auto auto auto; }
+.kacheln:not(.viele) .kachel.uebertragen .herkunft { display: block; grid-column: 2; grid-row: 3; font-size: 1.1rem; line-height: 1.2; font-weight: 600; color: var(--text-leise); }
+.kacheln:not(.viele) .kachel.uebertragen .balken { grid-row: 4; }
+.overlay-karte.wechsel .uebertrag { font-size: 2.4rem; font-weight: 600; color: var(--text-leise); margin-top: 1.2rem; }
+
+/* Pechvogel: "N× dabei" steht unter dem Namen, damit der Name in der schmalen Karte vollstaendig bleibt */
+.rekord-zwei .karte:last-child ol li { flex-wrap: wrap; row-gap: 0; }
+.rekord-zwei .karte:last-child ol li .kappe { flex: 1 1 calc(100% - 2.5em); }
+.rekord-zwei .karte:last-child ol li b { margin-left: 1.9em; font-weight: 700; }
+
+/* Mit Tisch-Leiste: Abstaende der linken Spalte enger, damit auch 15 Kacheln und zwei Sonderrunden-Kaesten bei 1280x720 ganz sichtbar bleiben */
+.links:has(.tische-raster) { gap: .8rem; }
+.links:has(.tische-raster) .kacheln.viele { gap: .6rem; }
+.dicht .tisch { padding: .1rem .2rem .2rem; }
+.dicht .tisch .t-name { font-size: .95rem; line-height: 1.1; }
+.dicht .tisch .t-wert { font-size: 1.4rem; line-height: 1.1; }
+.dicht .tisch .t-wert .icon { font-size: 1.4rem; }

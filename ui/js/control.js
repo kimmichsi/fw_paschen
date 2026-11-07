@@ -5,6 +5,7 @@
   let demo = false;
   let ansicht = null;     // aktuelle Ansicht
   let gewaehlt = null;    // angeklickte Person im Spiel
+  let tischGew = null;    // angeklickter Tisch im Spiel (nur bei mehr als 1 Tisch)
   let XL = null;          // Excel-Vorschau {pfad, vorschau}
   let XLjahre = new Set();
   let XLueber = false;
@@ -68,11 +69,12 @@
 
   // Hinweis nach einem Eintrag: Runde/Name/Preis, ggf. Phasenwechsel oder Spielende, plus "Rueckgaengig"
   function eintragHinweis(e) {
-    const zeilen = ["Runde " + zahl(e.nr) + ": " + e.name + " – " + e.preis_name];
+    const zeilen = ["Runde " + zahl(e.nr) + ": " + e.name + " – " + e.preis_name + (e.tisch ? " · Tisch " + e.tisch : "")];
     const f = e.folge;
     if (f && f.typ === "phasenwechsel") {
       zeilen.push((f.von_name ? "Phase „" + f.von_name + "“" : "Phase") + " beendet – " +
         (f.nach_name ? "weiter mit „" + f.nach_name + "“" : "alle Phasen durch – Sonderrunde(n) offen"));
+      if (f.uebertrag > 0) zeilen.push(zahl(f.uebertrag) + " " + plural(f.uebertrag, "Preis wandert", "Preise wandern") + " in die letzte Phase");
     } else if (f && f.typ === "ende") {
       zeilen.push("Spiel beendet");
     }
@@ -210,11 +212,12 @@
     // Phasen
     $("vb-phasen").innerHTML = s.phasen.length ? s.phasen.map((p, i) =>
       '<div class="phasen-zeile"><input type="text" class="phase-name" data-id="' + p.id + '" value="' + esc(p.name) + '">' +
-      '<span class="rest">' + anzahl(p.gesamt, "Preis", "Preise") + "</span>" +
+      '<span class="rest">' + anzahl(s.preise.filter((x) => x.phase_id === p.id && !x.spezial).reduce((a, x) => a + x.menge, 0), "Preis", "Preise") + "</span>" +
       '<button class="knopf symbol" data-act="phase-hoch" data-id="' + p.id + '"' + (i === 0 ? " disabled" : "") + ' title="Nach vorn" aria-label="Nach vorn">' + uiIcon("hoch") + "</button>" +
       '<button class="knopf symbol" data-act="phase-runter" data-id="' + p.id + '"' + (i === s.phasen.length - 1 ? " disabled" : "") + ' title="Nach hinten" aria-label="Nach hinten">' + uiIcon("runter") + "</button>" +
       '<button class="knopf symbol gefahr" data-act="phase-loeschen" data-id="' + p.id + '" title="Phase löschen" aria-label="Phase löschen">' + uiIcon("schliessen") + "</button></div>").join("")
       : '<p class="leer-text">Noch keine Phase. Lege zuerst mindestens eine Phase an.</p>';
+    zeichneTische(s);
     // Preise nach Phasen
     let h = "";
     s.phasen.forEach((ph) => {
@@ -233,6 +236,38 @@
       (p.ist_team ? '<span class="zusatz">Team</span>' : "") + (p.anwesend ? '<span class="haken-zeichen">' + uiIcon("haken") + "</span>" : "") + "</button>").join("")
       : '<p class="leer-text">Keine Person gefunden</p>';
   }
+  // Tische: Anzahl, Modus der letzten Phase und eine Rechnung je Phase aus dem aktuellen Stand
+  function zeichneTische(s) {
+    const T = s.tische || 1;
+    if (document.activeElement !== $("vb-tische")) $("vb-tische").value = T;
+    const modus = s.letzte_phase_modus || "tisch";
+    document.querySelectorAll('input[name="vb-modus"]').forEach((r) => { r.checked = r.value === modus; });
+    $("vb-modus-feld").hidden = T < 2;
+    $("vb-tische-beispiel").hidden = T > 1 && s.preise.some((p) => !p.spezial);
+    // eigene Preise je Phase (phasen[].gesamt der letzten Phase enthaelt schon den Uebertrag)
+    const eigen = (p) => s.preise.filter((x) => x.phase_id === p.id && !x.spezial).reduce((a, x) => a + x.menge, 0);
+    const mit = s.phasen.map((p) => ({ name: p.name, gesamt: eigen(p) })).filter((p) => p.gesamt > 0);
+    let zeilen = "";
+    if (T > 1) {
+      let uebertrag = 0;
+      mit.forEach((p, i) => {
+        const letzte = i === mit.length - 1;
+        if (!letzte) {
+          const k = Math.floor(p.gesamt / T), r = p.gesamt - k * T;
+          uebertrag += r;
+          zeilen += "<li><b>" + esc(p.name) + "</b>: " + anzahl(p.gesamt, "Preis", "Preise") + ", je Tisch " + anzahl(k, "Runde", "Runden") +
+            (r ? "; " + zahl(r) + " " + plural(r, "Preis wandert", "Preise wandern") + " in die letzte Phase" : "") + "</li>";
+        } else if (modus === "frei") {
+          zeilen += "<li><b>" + esc(p.name) + "</b>: " + anzahl(p.gesamt + uebertrag, "Preis", "Preise") + ", frei – wer zuerst kommt</li>";
+        } else {
+          const tot = p.gesamt + uebertrag, k = Math.floor(tot / T), r = tot - k * T;
+          zeilen += "<li><b>" + esc(p.name) + "</b>: " + anzahl(tot, "Preis", "Preise") + (uebertrag ? " (davon " + zahl(uebertrag) + " " + plural(uebertrag, "übertragen", "übertragen") + ")" : "") + ", je Tisch " + anzahl(k, "Runde", "Runden") +
+            (r ? "; " + anzahl(r, "Preis", "Preise") + " " + plural(r, "wird", "werden") + " frei ausgespielt" : "") + "</li>";
+        }
+      });
+    }
+    $("vb-tische-info").innerHTML = zeilen;
+  }
   function preisZeile(p) {
     return '<button class="preis-zeile' + (p.spezial ? " spezial" : "") + '" data-act="preis-bearbeiten" data-id="' + p.id + '">' + bildIcon(p.bild, p.icon) +
       "<span>" + esc(p.name) + '</span><span class="menge">' + (p.vergeben ? zahl(p.rest) + " von " + zahl(p.menge) + " übrig" : zahl(p.menge) + " Stück") + "</span><span class='leise'>bearbeiten</span></button>";
@@ -244,6 +279,16 @@
     const sr = Z.sonderrunde;
     if (gewaehlt && !s.anwesende.some((a) => a.id === gewaehlt)) gewaehlt = null;
 
+    const T = s.tische || 1;
+    const mitTisch = T > 1;
+    const stand = s.tisch_stand || null;
+    const aktPh = s.phasen.find((p) => p.aktiv);
+    const modusFrei = mitTisch && !!aktPh && !!aktPh.letzte && s.letzte_phase_modus === "frei";
+    const frei = !!s.tisch_frei || modusFrei;
+    const tStand = (n) => (stand ? stand.find((e) => e.tisch === n) || null : null);
+    // ein gewaehlter Tisch, der nicht mehr geht (fertig, Tischzahl geaendert), faellt weg
+    if (tischGew && (!mitTisch || tischGew > T || (!sr && !frei && tStand(tischGew) && tStand(tischGew).fertig))) tischGew = null;
+
     // Namen
     const such = $("sp-suche").value;
     const liste = s.anwesende.filter((a) => passt(a.name, such));
@@ -254,25 +299,65 @@
       (a.ist_team ? '<span class="zusatz">Team</span>' : "") + (a.siege ? '<span class="stille-zahl">' + zahl(a.siege) + "</span>" : "") + "</button>").join("")
       : '<p class="leer-text">' + (s.anwesende.length ? "Niemand gefunden." : "Noch niemand angemeldet. Unter „Werkzeuge“ Teilnehmer nachtragen.") + "</p>";
 
+    // Ablauf Name, Tisch, Preis (nur bei mehreren Tischen): zeigt, welcher Schritt als Naechstes fehlt
+    const regulaer = !sr && !s.beendet && !!s.aktive_phase_id;
+    const stepper = $("sp-schritte");
+    stepper.hidden = !(mitTisch && regulaer);
+    if (!stepper.hidden) {
+      const person = gewaehlt && s.anwesende.find((a) => a.id === gewaehlt);
+      const schritte = [
+        { titel: person ? person.name : "Gewinner", ok: !!person },
+        { titel: tischGew ? "Tisch " + tischGew : "Tisch", ok: !!tischGew },
+        { titel: "Preis", ok: false },
+      ];
+      const jetzt = schritte.findIndex((x) => !x.ok);
+      stepper.innerHTML = schritte.map((x, i) =>
+        '<li class="' + (x.ok ? "erledigt" : i === jetzt ? "jetzt" : "offen") + '"' + (i === jetzt ? ' aria-current="step"' : "") + '><span class="schritt-nr">' + (x.ok ? uiIcon("haken") : i + 1) + '</span><span class="schritt-text" title="' + esc(x.titel) + '">' + esc(x.titel) + "</span></li>").join("");
+    }
+
+    // Tisch-Auswahl
+    const tb = $("sp-tisch");
+    tb.hidden = !(mitTisch && (sr || regulaer));
+    if (!tb.hidden) {
+      const info = sr ? "" : s.tisch_frei ? "Rest wird frei ausgespielt" : modusFrei ? "Frei – wer zuerst kommt" : stand && stand[0] ? "Je Tisch " + anzahl(stand[0].kontingent, "Runde", "Runden") + " in dieser Phase" : "";
+      let kn = "";
+      for (let n = 1; n <= T; n++) {
+        const e = tStand(n);
+        const gesperrt = !sr && !frei && !!e && e.fertig;
+        const zeile2 = sr ? "" : gesperrt ? "fertig" : e && !frei ? "noch " + zahl(e.noch) : e ? zahl(e.gespielt) + " gespielt" : "";
+        kn += '<button class="tisch-knopf' + (tischGew === n ? " gewaehlt" : "") + '" data-act="tisch" data-tisch="' + n + '" aria-pressed="' + (tischGew === n) + '"' + (gesperrt ? " disabled" : "") + "><b>Tisch " + n + "</b>" + (zeile2 ? "<small>" + zeile2 + "</small>" : "") + "</button>";
+      }
+      tb.innerHTML = '<div class="spalten-kopf"><h2>' + (sr ? "Tisch (optional)" : "2 · Welcher Tisch?") + "</h2>" + (info ? '<span class="tisch-info klein leise">' + esc(info) + "</span>" : "") + "</div>" +
+        '<div class="tisch-knoepfe">' + kn + "</div>";
+    }
+
     // Preise
     const banner = $("sp-sonder-banner");
     banner.hidden = !sr;
-    $("sp-titel-preis").textContent = sr ? "Sonderrunde" : "2 · Welcher Preis?";
+    $("sp-titel-preis").textContent = sr ? "Sonderrunde" : mitTisch ? "3 · Welcher Preis?" : "2 · Welcher Preis?";
+    $("sp-titel-preis").parentNode.classList.toggle("nach-tisch", mitTisch && (sr || regulaer));
     if (sr) {
-      banner.innerHTML = '<div class="gross-text">' + bildIcon(sr.bild, sr.icon) + " Sonderrunde: " + esc(sr.name) + "</div><p>Auf dem Beamer läuft die Sonderrunde. Klicke links auf den Gewinner.</p>" +
+      banner.innerHTML = '<div class="gross-text">' + bildIcon(sr.bild, sr.icon) + " Sonderrunde: " + esc(sr.name) + "</div><p>Auf dem Beamer läuft die Sonderrunde. Klicke links auf den Gewinner" + (mitTisch ? " und wähle bei Bedarf den Tisch." : ".") + "</p>" +
         '<button class="knopf" data-act="sonder-abbrechen">Sonderrunde abbrechen</button>';
     }
     let hinweis = "";
     if (s.beendet) hinweis = "";
-    else if (s.aktive_phase_name) hinweis = "Aktive Phase: " + s.aktive_phase_name + " (Phase " + s.phase_nr + " von " + s.phasen_anzahl + ")";
+    else if (s.aktive_phase_name) {
+      hinweis = "Aktive Phase: " + s.aktive_phase_name + " (Phase " + s.phase_nr + " von " + s.phasen_anzahl + ")";
+      const ub = s.preise.filter((p) => p.waehlbar && p.uebertragen).reduce((a, p) => a + p.rest, 0);
+      if (ub > 0) hinweis += " · darunter " + anzahl(ub, "übertragener Preis", "übertragene Preise");
+    }
     else hinweis = s.spezialpreise_offen.length ? "Alle Phasen sind beendet – es fehlt nur noch die Sonderrunde." : "Keine Preise vorhanden. In der Vorbereitung Preise anlegen.";
     // Die aktive Phase traegt das Wuerfelauge
     $("sp-phasenhinweis").innerHTML = sr || !hinweis ? "" : (s.aktive_phase_name ? '<span class="aug" aria-hidden="true"></span>' : "") + "<span>" + esc(hinweis) + "</span>";
     const wb = s.preise.filter((p) => p.waehlbar);
+    const bereit = !!gewaehlt && (!mitTisch || !!tischGew);
+    const phNr = (p) => s.phasen.findIndex((ph) => ph.id === p.phase_id) + 1;
     $("sp-preise").hidden = !!sr;
     $("sp-preise").innerHTML = wb.map((p) =>
-      '<button class="preis-kachel' + (gewaehlt ? " bereit" : "") + '" data-act="preis" data-id="' + p.id + '">' + bildIcon(p.bild, p.icon) +
-      kurzHtml(p.name, "name drei") + '<span class="rest"><b>' + zahl(p.rest) + "</b> von " + zahl(p.menge) + "</span></button>").join("");
+      '<button class="preis-kachel' + (bereit ? " bereit" : "") + '" data-act="preis" data-id="' + p.id + '">' + bildIcon(p.bild, p.icon) +
+      kurzHtml(p.name, "name drei") + '<span class="rest"><b>' + zahl(p.rest) + "</b> von " + zahl(p.menge) + "</span>" +
+      (p.uebertragen && phNr(p) ? '<small class="herkunft">aus Phase ' + phNr(p) + "</small>" : "") + "</button>").join("");
     $("sp-spezial").hidden = !!sr;
     $("sp-spezial").innerHTML = s.beendet
       ? '<div class="ende-banner">Alle Preise sind vergeben. Das Spiel ist beendet.</div>'
@@ -284,11 +369,11 @@
     const fortschritt = s.beendet ? "Beendet nach " + anzahl(s.runden_gespielt, "Runde", "Runden")
       : "Runde " + zahl(s.runde) + " · noch " + anzahl(s.rest_gesamt, "Preis", "Preise") + (s.phase_nr ? " · Phase " + s.phase_nr + "/" + s.phasen_anzahl : "");
     $("sp-status").innerHTML = '<h2>Stand</h2><div class="fortschritt">' + esc(fortschritt) + "</div>" +
-      (l ? '<div class="letzter"><div class="zeile' + (l.sonderrunde ? " sonder" : "") + '">Runde ' + zahl(l.nr) + ": " + esc(l.name) + " – " + esc(l.preis_name) + "</div></div>"
+      (l ? '<div class="letzter"><div class="zeile' + (l.sonderrunde ? " sonder" : "") + '">Runde ' + zahl(l.nr) + ": " + esc(l.name) + " – " + esc(l.preis_name) + (l.tisch ? " · Tisch " + l.tisch : "") + "</div></div>"
         : '<div class="letzter leise">Noch keine Eintragung.</div>') +
       '<button class="knopf" data-act="rueckgaengig"' + (l ? "" : " disabled") + ">Rückgängig</button>";
     $("sp-siege").innerHTML = s.letzte_siege.length ? s.letzte_siege.map((x) =>
-      '<li class="' + (x.sonderrunde ? "sonder" : "") + '"><span class="nr">' + zahl(x.nr) + '.</span><span>' + esc(x.name) + ' <span class="was">– ' + esc(x.preis_name) + "</span></span></li>").join("")
+      '<li class="' + (x.sonderrunde ? "sonder" : "") + '"><span class="nr">' + zahl(x.nr) + '.</span><span>' + esc(x.name) + ' <span class="was">– ' + esc(x.preis_name) + (x.tisch ? " · Tisch " + x.tisch : "") + "</span></span></li>").join("")
       : '<li class="leise">Noch keine Siege.</li>';
   }
 
@@ -489,23 +574,33 @@
     },
     person: async (el) => {
       if (Z.sonderrunde) {
-        const r = await call("sonderrunde_sieg", el.dataset.id);
+        const t = tischGew;
+        const r = await call("sonderrunde_sieg", el.dataset.id, t);
+        if (r) tischGew = null;
         if (r && r.ereignis) eintragHinweis(r.ereignis);
+        if (r) zeichneSpiel();
         return;
       }
       gewaehlt = gewaehlt === el.dataset.id ? null : el.dataset.id;
       zeichneSpiel();
     },
+    tisch: (el) => {
+      const n = parseInt(el.dataset.tisch, 10);
+      tischGew = tischGew === n ? null : n;
+      zeichneSpiel();
+    },
     preis: async (el) => {
       if (!gewaehlt) { toast("Bitte zuerst links den Gewinner anklicken", true); return; }
-      const wer = gewaehlt;
-      gewaehlt = null; // sofort leeren: ein zweiter Klick kann nichts mehr eintragen
-      const r = await call("sieg", wer, el.dataset.id);
+      const mitTisch = (spiel().tische || 1) > 1;
+      if (mitTisch && !tischGew) { toast("Bitte zuerst den Tisch wählen", true); return; }
+      const wer = gewaehlt, tisch = mitTisch ? tischGew : null;
+      gewaehlt = null; tischGew = null; // sofort leeren: ein zweiter Klick kann nichts mehr eintragen; der Tisch wird jedes Mal neu gewaehlt
+      const r = await call("sieg", wer, el.dataset.id, tisch);
       if (r) {
         if (r.ereignis) eintragHinweis(r.ereignis);
         zeichneSpiel();
       } else if (spiel() && spiel().anwesende.some((a) => a.id === wer)) {
-        gewaehlt = wer; // Fehler: Auswahl behalten
+        gewaehlt = wer; tischGew = tisch; // Fehler: Auswahl behalten
         zeichneSpiel();
       }
     },
@@ -581,6 +676,15 @@
     const r = await call("person_anlegen", $("np-vorname").value, $("np-nachname").value, $("np-team").checked, true);
     if (r) { $("np-vorname").value = ""; $("np-nachname").value = ""; $("np-team").checked = false; $("np-vorname").focus(); toast("Person angelegt und angemeldet"); }
   });
+  async function tischeSpeichern() {
+    const t = parseInt($("vb-tische").value, 10);
+    const modus = (document.querySelector('input[name="vb-modus"]:checked') || {}).value || "tisch";
+    if (!(t >= 1 && t <= 12)) { toast("Die Anzahl der Tische muss zwischen 1 und 12 liegen", true); alleZeichnen(); return; }
+    const r = await call("spiel_einstellungen_setzen", t, modus);
+    if (!r) alleZeichnen();
+  }
+  $("vb-tische").addEventListener("change", tischeSpeichern);
+  $("vb-modus-feld").addEventListener("change", tischeSpeichern);
   $("vb-suche").addEventListener("input", () => zeichneVorbereitung());
   $("sp-suche").addEventListener("input", () => zeichneSpiel());
   $("neu-jahr").addEventListener("input", (e) => { e.target.dataset.auto = "0"; });

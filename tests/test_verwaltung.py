@@ -62,7 +62,7 @@ def test_migration_v1_nach_v2(tmp_path):
     ordner.mkdir()
     (ordner / store.DATEINAME).write_text(json.dumps(alt), encoding="utf-8")
     b = store.laden(ordner)
-    assert b.version == 2
+    assert b.version == 3
     ids = [s.id for s in b.spiele[0].siege]
     assert all(ids) and len(set(ids)) == 2
     assert [r["titel"] for r in b.regeln] == [r["titel"] for r in standard_regeln()]
@@ -89,7 +89,7 @@ def _siege(api):
 def test_sieg_bearbeiten_und_bestand(api):
     z, erika, max_ = _siege(api)
     liste = api.siege_liste(2025)
-    assert [k for k in liste[0]] == ["id", "nr", "zeit", "person_id", "name", "preis_id", "preis_name", "sonderrunde", "importiert"]
+    assert [k for k in liste[0]] == ["id", "nr", "zeit", "person_id", "name", "preis_id", "preis_name", "sonderrunde", "importiert", "tisch"]
     assert [x["preis_name"] for x in liste] == ["Wurst", "Teig"]
     wurst, teig, tasse = preis(z, "Wurst")["id"], preis(z, "Teig")["id"], preis(z, "Tasse")["id"]
     # Teig (Rest 0) darf nicht noch einmal vergeben werden
@@ -428,7 +428,7 @@ def test_demo_erfunden_kopie_beenden_unberuehrt(tmp_path):
     # im Demo veraendern: Sieg, Bild, Spiel loeschen, Regeln
     erika = z["spiel"]["anwesende"][0]["id"]
     wahl = next(p for p in z["spiel"]["preise"] if p["waehlbar"])
-    ok(a.sieg(erika, wahl["id"]))
+    ok(a.sieg(erika, wahl["id"], tisch=1))  # Demo-Jahr hat 4 Tische
     ok(a.preis_bild_setzen("Tasse", PNG))
     ok(a.regel_hinzufuegen("X", "y"))
     ok(a.spiel_loeschen(z["jahre"][0]))

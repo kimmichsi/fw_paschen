@@ -10,7 +10,7 @@ from collections import Counter
 from typing import Optional
 
 from . import spiel as sp
-from .models import Datenbestand, Spiel, name_norm, neue_id
+from .models import LETZTE_PHASE_MODI, MAX_TISCHE, Datenbestand, Spiel, name_norm, neue_id
 from .spiel import RegelFehler
 
 INTERVALL_MIN = 5
@@ -42,6 +42,7 @@ def siege_liste(bestand: Datenbestand, jahr: int) -> list[dict]:
                 "preis_name": preis.name if preis else "?",
                 "sonderrunde": x.sonderrunde,
                 "importiert": x.importiert,
+                "tisch": x.tisch,
             }
         )
     return ergebnis
@@ -54,8 +55,15 @@ def _sieg(s: Spiel, sieg_id: str):
     raise RegelFehler("Diesen Sieg gibt es nicht.")
 
 
-def sieg_bearbeiten(bestand: Datenbestand, jahr: int, sieg_id: str, person_id: str, preis_id: str):
-    """Aendert Gewinner/Preis eines Siegs (nachtraegliche Korrektur: nur der Bestand wird geprueft)."""
+_UNVERAENDERT = object()
+
+
+def sieg_bearbeiten(
+    bestand: Datenbestand, jahr: int, sieg_id: str, person_id: str, preis_id: str, tisch=_UNVERAENDERT
+):
+    """Aendert Gewinner/Preis/Tisch eines Siegs (nachtraegliche Korrektur: nur der Bestand und der
+    Tisch-Bereich werden geprueft, nicht das Kontingent). Ohne ``tisch`` bleibt der Tisch
+    unveraendert, ``tisch=None`` setzt ihn zurueck."""
     s = _spiel(bestand, jahr)
     x = _sieg(s, sieg_id)
     if bestand.person(person_id) is None:
@@ -65,6 +73,8 @@ def sieg_bearbeiten(bestand: Datenbestand, jahr: int, sieg_id: str, person_id: s
         raise RegelFehler("Dieser Preis existiert nicht.")
     if preis_id != x.preis_id and sp.rest(s, preis_id) <= 0:
         raise RegelFehler(f"Der Preis \"{preis.name}\" ist bereits vergeben.")
+    neuer_tisch = x.tisch if tisch is _UNVERAENDERT else sp._tisch_pruefen(s, tisch)
+    x.tisch = neuer_tisch
     x.person_id = person_id
     x.preis_id = preis_id
     x.sonderrunde = preis.spezial
@@ -103,6 +113,22 @@ def sieg_loeschen(bestand: Datenbestand, jahr: int, sieg_id: str) -> None:
 
 
 # ---------------------------------------------------------------- Spiele
+def spiel_einstellungen_setzen(spiel: Spiel, tische, letzte_phase_modus) -> None:
+    """Anzahl Tische (1 bis 12) und Regel der letzten Phase ("tisch" | "frei") setzen."""
+    try:
+        if isinstance(tische, bool):
+            raise ValueError
+        n = int(tische)
+    except (TypeError, ValueError):
+        raise RegelFehler(f"Die Anzahl der Tische muss eine Zahl von 1 bis {MAX_TISCHE} sein.")
+    if not 1 <= n <= MAX_TISCHE:
+        raise RegelFehler(f"Die Anzahl der Tische muss zwischen 1 und {MAX_TISCHE} liegen.")
+    if letzte_phase_modus not in LETZTE_PHASE_MODI:
+        raise RegelFehler("Unbekannte Regel fuer die letzte Phase (erlaubt: gleichmaessig je Tisch oder frei).")
+    spiel.tische = n
+    spiel.letzte_phase_modus = letzte_phase_modus
+
+
 def spiel_loeschen(bestand: Datenbestand, jahr: int) -> None:
     s = _spiel(bestand, jahr)
     bestand.spiele.remove(s)

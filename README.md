@@ -33,6 +33,19 @@ Die Spielleitung bedient alles am Laptop, das Publikum sieht den aktuellen Stand
 4. **Sonderrunde:** Den Spezialpreis anklicken, dann den Gewinner wählen. Das geht jederzeit.
 5. **Export:** Am Ende den Spielstand nach Excel exportieren; die Statistik kann auf dem Beamer gezeigt werden.
 
+## Mehrere Tische
+
+Wird an mehreren Tischen gespielt, stellt die Spielleitung in der Vorbereitung die **Anzahl Tische** ein (1 bis 12; 1 heißt ohne Tische, wie bisher). Bei jedem Sieg wird der Tisch gewählt. Die Regel in Alltagssprache:
+
+- **Jeder Tisch spielt in jeder Phase gleich viele Runden.** Die Zahl ergibt sich aus den Preisen der Phase geteilt durch die Anzahl Tische, abgerundet. Die Gewinner wählen weiter frei aus allen Preisen der Phase.
+- **Hat ein Tisch seine Runden gespielt, kann er in dieser Phase nicht mehr gewinnen.** Die Phase endet, sobald alle Tische ihre Runden gespielt haben.
+- **Was sich nicht gleichmäßig aufteilen lässt, bleibt liegen** und wandert in die **letzte Phase**; dort sind diese Preise normal wählbar.
+- **Letzte Phase:** wahlweise „gleichmäßig je Tisch“ (dieselbe Regel über den ganzen Topf inklusive Übertrag; was sich dort nicht aufteilen lässt, wird am Ende frei ausgespielt, wer zuerst kommt) oder „frei“ (kein Kontingent).
+- **Sonderrunden** zählen nicht zu den Runden eines Tisches; der Tisch ist dort optional.
+- Alles wird aus dem aktuellen Stand berechnet: Rückgängig, Nachlegen, Bearbeiten und eine geänderte Tischanzahl passen die Runden automatisch an. Ein neues Spiel übernimmt die Tischanzahl vom Vorjahr, importierte Jahre haben 1 Tisch.
+
+Beispiel: 42 Preise in Phase 1 und 4 Tische ergeben 10 Runden je Tisch, also 40 Siege. Die 2 übrigen Preise (welche, hängt von der Wahl der Gewinner ab) bleiben liegen und kommen in die letzte Phase.
+
 ## Datenordner und Datenschutz
 
 - Die Anwendung speichert alle Daten (`paschen-daten.json` und der Unterordner `backup`) in dem Ordner, den die Spielleitung beim ersten Start wählt. Der Pfad wird in `%APPDATA%\Paschen\config.json` gemerkt.

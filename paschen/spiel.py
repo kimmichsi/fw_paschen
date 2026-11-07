@@ -32,25 +32,158 @@ def _phasen_sortiert(spiel: Spiel) -> list[Phase]:
     return sorted(spiel.phasen, key=lambda p: p.reihenfolge)
 
 
-def aktive_phase(spiel: Spiel) -> Optional[Phase]:
-    """Erste Phase (nach ``reihenfolge``) mit Rest > 0 bei nicht-speziellen Preisen,
-    sonst ``None``."""
+# ------------------------------------------------- Tische und Kontingente
+# Alles wird aus dem aktuellen Stand berechnet (nichts gespeichert); dadurch stimmen
+# Rueckgaengig, Bearbeiten, Nachlegen und eine geaenderte Tischanzahl automatisch.
+def _letzte_phase(spiel: Spiel) -> Optional[Phase]:
+    phasen = _phasen_sortiert(spiel)
+    return phasen[-1] if phasen else None
+
+
+def _phase_preise(spiel: Spiel, phase: Phase) -> list[Preis]:
+    return [p for p in spiel.preise if p.phase_id == phase.id and not p.spezial]
+
+
+def _vorher_vergeben(spiel: Spiel, preis_id: str, letzte: Phase) -> int:
+    """Siege dieses Preises, die NICHT in der letzten Phase fielen (also vor einem Uebertrag)."""
+    return sum(1 for s in spiel.siege if s.preis_id == preis_id and s.phase_id != letzte.id)
+
+
+def _tisch_zaehler(spiel: Spiel, phase: Phase) -> dict:
+    """``{tisch: Anzahl normaler Siege}`` in dieser Phase."""
+    zaehler: dict = {}
+    for s in spiel.siege:
+        if s.phase_id == phase.id and s.tisch is not None and not s.sonderrunde:
+            zaehler[s.tisch] = zaehler.get(s.tisch, 0) + 1
+    return zaehler
+
+
+def tisch_siege(spiel: Spiel, phase: Phase, tisch: int) -> int:
+    """Siege (ohne Sonderrunden) von ``tisch`` in ``phase``."""
+    return _tisch_zaehler(spiel, phase).get(tisch, 0)
+
+
+def _frueher_fertig(spiel: Spiel, phase: Phase) -> bool:
+    """Eine NICHT letzte Phase ist fertig: Rest 0, oder (mehrere Tische) alle Tische am Kontingent."""
+    preise = _phase_preise(spiel, phase)
+    if sum(rest(spiel, p.id) for p in preise) == 0:
+        return True
+    if spiel.tische > 1:
+        quote = sum(p.menge for p in preise) // spiel.tische
+        zaehler = _tisch_zaehler(spiel, phase)
+        return all(zaehler.get(t, 0) >= quote for t in range(1, spiel.tische + 1))
+    return False
+
+
+def uebertrag_phase(spiel: Spiel, phase: Phase) -> int:
+    """Anzahl Preise, die aus der (fertigen, nicht letzten) ``phase`` in die letzte Phase wandern."""
+    letzte = _letzte_phase(spiel)
+    if spiel.tische <= 1 or letzte is None or phase.id == letzte.id or not _frueher_fertig(spiel, phase):
+        return 0
+    return sum(max(0, p.menge - _vorher_vergeben(spiel, p.id, letzte)) for p in _phase_preise(spiel, phase))
+
+
+def uebertragene_preise(spiel: Spiel) -> list[Preis]:
+    """Preise frueherer, fertiger Phasen, deren Restbestand in die letzte Phase uebertragen wurde."""
+    letzte = _letzte_phase(spiel)
+    if spiel.tische <= 1 or letzte is None:
+        return []
+    ergebnis = []
     for phase in _phasen_sortiert(spiel):
-        for p in spiel.preise:
-            if p.phase_id == phase.id and not p.spezial and rest(spiel, p.id) > 0:
-                return phase
+        if phase.id == letzte.id or not _frueher_fertig(spiel, phase):
+            continue
+        ergebnis += [
+            p for p in _phase_preise(spiel, phase) if p.menge - _vorher_vergeben(spiel, p.id, letzte) > 0
+        ]
+    return ergebnis
+
+
+def uebertrag_gesamt(spiel: Spiel) -> int:
+    """Anzahl aller Preise, die in die letzte Phase uebertragen wurden."""
+    return sum(uebertrag_phase(spiel, ph) for ph in spiel.phasen)
+
+
+def _phase_pool(spiel: Spiel, phase: Phase) -> list[Preis]:
+    """Preise, die in dieser Phase vergeben werden (letzte Phase: inkl. uebertragener)."""
+    eigene = _phase_preise(spiel, phase)
+    letzte = _letzte_phase(spiel)
+    if letzte is None or phase.id != letzte.id:
+        return eigene
+    ids = {p.id for p in eigene} | {p.id for p in uebertragene_preise(spiel)}
+    return [p for p in spiel.preise if p.id in ids]
+
+
+def phase_fertig(spiel: Spiel, phase: Phase) -> bool:
+    """Phase ist abgeschlossen. Die letzte Phase endet erst, wenn alles (inkl. Uebertrag) vergeben ist."""
+    letzte = _letzte_phase(spiel)
+    if letzte is not None and phase.id == letzte.id:
+        return sum(rest(spiel, p.id) for p in _phase_pool(spiel, phase)) == 0
+    return _frueher_fertig(spiel, phase)
+
+
+def kontingent(spiel: Spiel, phase: Phase) -> Optional[int]:
+    """Runden je Tisch in dieser Phase = Preise der Phase // Tische. ``None`` = kein Kontingent
+    (ein Tisch oder letzte Phase im Modus "frei"). Letzte Phase: inkl. uebertragener Preise (Menge beim Uebertrag)."""
+    if spiel.tische <= 1:
+        return None  # ohne Tische kein Kontingent
+    tische = spiel.tische
+    letzte = _letzte_phase(spiel)
+    gesamt = sum(p.menge for p in _phase_preise(spiel, phase))
+    if letzte is not None and phase.id == letzte.id:
+        if spiel.letzte_phase_modus == "frei":
+            return None
+        gesamt += uebertrag_gesamt(spiel)
+    return gesamt // tische
+
+
+def aktive_phase(spiel: Spiel) -> Optional[Phase]:
+    """Erste Phase (nach ``reihenfolge``), die nicht fertig ist, sonst ``None``.
+
+    Bei einem Tisch: erste Phase mit Rest > 0 (wie bisher). Bei mehreren Tischen ist eine fruehere
+    Phase auch fertig, wenn alle Tische ihr Kontingent gespielt haben (der Rest wird uebertragen)."""
+    for phase in _phasen_sortiert(spiel):
+        if not phase_fertig(spiel, phase):
+            return phase
     return None
 
 
+def tisch_frei(spiel: Spiel) -> bool:
+    """``True``: letzte Phase (Modus "tisch"), alle Kontingente erreicht, der Rest wird frei ausgespielt."""
+    phase = aktive_phase(spiel)
+    letzte = _letzte_phase(spiel)
+    if phase is None or letzte is None or phase.id != letzte.id:
+        return False
+    if spiel.tische <= 1 or spiel.letzte_phase_modus != "tisch":
+        return False
+    quote = kontingent(spiel, phase)
+    zaehler = _tisch_zaehler(spiel, phase)
+    return all(zaehler.get(t, 0) >= quote for t in range(1, spiel.tische + 1))
+
+
+def tisch_stand(spiel: Spiel) -> Optional[list]:
+    """Runden je Tisch der aktiven Phase: ``[{tisch, gespielt, kontingent, noch, fertig}]``.
+    ``None`` bei einem Tisch, ohne aktive Phase oder ohne Kontingent (letzte Phase "frei")."""
+    phase = aktive_phase(spiel)
+    if phase is None or spiel.tische <= 1:
+        return None
+    quote = kontingent(spiel, phase)
+    if quote is None:
+        return None
+    zaehler = _tisch_zaehler(spiel, phase)
+    stand = []
+    for t in range(1, spiel.tische + 1):
+        g = zaehler.get(t, 0)
+        stand.append({"tisch": t, "gespielt": g, "kontingent": quote, "noch": max(0, quote - g), "fertig": g >= quote})
+    return stand
+
+
 def waehlbare_preise(spiel: Spiel) -> list[Preis]:
-    """Preise, die jetzt normal vergeben werden koennen (aktive Phase, Rest > 0, nicht spezial)."""
+    """Preise, die jetzt normal vergeben werden koennen (aktive Phase, Rest > 0, nicht spezial;
+    in der letzten Phase inkl. uebertragener Preise)."""
     phase = aktive_phase(spiel)
     if phase is None:
         return []
-    return [
-        p for p in spiel.preise
-        if p.phase_id == phase.id and not p.spezial and rest(spiel, p.id) > 0
-    ]
+    return [p for p in _phase_pool(spiel, phase) if rest(spiel, p.id) > 0]
 
 
 def spezialpreise_offen(spiel: Spiel) -> list[Preis]:
@@ -73,11 +206,15 @@ def ist_beendet(spiel: Spiel) -> bool:
     return len(spiel.preise) > 0 and rest_gesamt(spiel) == 0
 
 
-def phasenwechsel_erkennen(vorher_phase_id: Optional[str], spiel: Spiel) -> Optional[dict]:
+def phasenwechsel_erkennen(
+    vorher_phase_id: Optional[str], spiel: Spiel, vorher_uebertrag: int = 0
+) -> Optional[dict]:
     """Vergleicht die frueher aktive Phase mit der jetzigen.
 
     Gibt ``None`` zurueck, wenn sich nichts geaendert hat. Sonst ein dict
-    ``{"von": id|None, "nach": id|None, "nach_name": str|None, "ende": bool}``;
+    ``{"von": id|None, "nach": id|None, "nach_name": str|None, "ende": bool, "uebertrag": int}``
+    (``uebertrag`` = Preise, die durch den Wechsel neu in die letzte Phase wandern: ``uebertrag_gesamt``
+    jetzt minus ``vorher_uebertrag``, auch ueber uebersprungene Phasen hinweg);
     ``ende=True``, wenn keine aktive Phase mehr uebrig ist (nach Phasenende
     kann noch eine Sonderrunde offen sein, siehe ``ist_beendet``).
     """
@@ -90,17 +227,37 @@ def phasenwechsel_erkennen(vorher_phase_id: Optional[str], spiel: Spiel) -> Opti
         "nach": jetzt_id,
         "nach_name": jetzt.name if jetzt else None,
         "ende": jetzt is None,
+        "uebertrag": max(0, uebertrag_gesamt(spiel) - int(vorher_uebertrag or 0)),
     }
 
 
 # ---------------------------------------------------------------- Aktionen
+def _tisch_pruefen(spiel: Spiel, tisch) -> Optional[int]:
+    """Wandelt ``tisch`` in int um und prueft 1..Tische; ``None`` bleibt ``None``."""
+    if tisch is None or tisch == "":
+        return None
+    if isinstance(tisch, bool):
+        raise RegelFehler("Ungueltiger Tisch.")
+    try:
+        nr = int(tisch)
+    except (TypeError, ValueError):
+        raise RegelFehler("Ungueltiger Tisch.")
+    if not 1 <= nr <= max(1, spiel.tische):
+        if spiel.tische <= 1:
+            raise RegelFehler("Es gibt nur 1 Tisch.")
+        raise RegelFehler(f"Es gibt nur {spiel.tische} Tische (1 bis {spiel.tische}).")
+    return nr
+
+
 def sieg_eintragen(
-    spiel: Spiel, person_id: str, preis_id: str, sonderrunde: bool = False
+    spiel: Spiel, person_id: str, preis_id: str, sonderrunde: bool = False, tisch: Optional[int] = None
 ) -> Sieg:
-    """Traegt einen Sieg ein (setzt ``nr`` und ``zeit``) und gibt ihn zurueck.
+    """Traegt einen Sieg ein (setzt ``nr``, ``zeit``, ``phase_id``, ``tisch``) und gibt ihn zurueck.
 
     Prueft: Person anwesend, Preis existiert, Rest > 0; normal: Preis nicht
-    spezial und in der aktiven Phase; Sonderrunde: Preis muss spezial sein.
+    spezial und waehlbar (aktive Phase, in der letzten auch uebertragene); bei mehr als einem Tisch
+    ist der Tisch Pflicht und darf sein Kontingent nicht erreicht haben (ausser bei der freien
+    Restrunde der letzten Phase). Sonderrunde: Preis muss spezial sein; Tisch optional, kein Kontingent.
     """
     if person_id not in spiel.anwesende_ids:
         raise RegelFehler("Diese Person ist nicht als anwesend angemeldet.")
@@ -109,19 +266,28 @@ def sieg_eintragen(
         raise RegelFehler("Dieser Preis existiert nicht.")
     if rest(spiel, preis_id) <= 0:
         raise RegelFehler(f"Der Preis \"{preis.name}\" ist bereits vergeben.")
+    aktiv = aktive_phase(spiel)
     if sonderrunde:
         if not preis.spezial:
             raise RegelFehler(
                 f"\"{preis.name}\" ist kein Spezialpreis und kann nicht in einer Sonderrunde vergeben werden."
             )
+        nr_tisch = _tisch_pruefen(spiel, tisch)
     else:
         if preis.spezial:
             raise RegelFehler(
                 f"\"{preis.name}\" ist ein Spezialpreis und nur in einer Sonderrunde vergebbar."
             )
-        aktiv = aktive_phase(spiel)
-        if aktiv is None or preis.phase_id != aktiv.id:
+        if aktiv is None or preis_id not in {p.id for p in waehlbare_preise(spiel)}:
             raise RegelFehler(f"\"{preis.name}\" gehoert nicht zur aktuellen Phase.")
+        nr_tisch = _tisch_pruefen(spiel, tisch)
+        if spiel.tische > 1:
+            if nr_tisch is None:
+                raise RegelFehler("Bitte den Tisch waehlen.")
+            quote = kontingent(spiel, aktiv)
+            if quote is not None and not tisch_frei(spiel) and tisch_siege(spiel, aktiv, nr_tisch) >= quote:
+                runden = "die 1 Runde" if quote == 1 else f"alle {quote} Runden"
+                raise RegelFehler(f"Tisch {nr_tisch} hat in dieser Phase {runden} gespielt.")
     sieg = Sieg(
         person_id=person_id,
         preis_id=preis_id,
@@ -129,6 +295,8 @@ def sieg_eintragen(
         zeit=datetime.now().isoformat(timespec="seconds"),
         sonderrunde=sonderrunde,
         importiert=False,
+        tisch=nr_tisch,
+        phase_id=aktiv.id if aktiv else None,
     )
     spiel.siege.append(sieg)
     return sieg
@@ -202,7 +370,7 @@ def neues_spiel_aus_vorjahr(bestand: Datenbestand, jahr: int) -> Spiel:
     """Legt das Spiel ``jahr`` an und haengt es an ``bestand.spiele`` (sortiert nach Jahr).
 
     Kopiert vom letzten frueheren Jahr: Phasen und Preise (gleiche Mengen, neue IDs)
-    sowie die Anwesenden. Keine Siege. Ohne Vorjahr entsteht ein leeres Spiel.
+    sowie die Anwesenden, Tischanzahl und Modus der letzten Phase. Keine Siege. Ohne Vorjahr entsteht ein leeres Spiel.
     """
     if bestand.spiel(jahr) is not None:
         raise RegelFehler(f"Fuer {jahr} gibt es bereits ein Spiel.")
@@ -227,6 +395,8 @@ def neues_spiel_aus_vorjahr(bestand: Datenbestand, jahr: int) -> Spiel:
                 )
             )
         neu.anwesende_ids = list(vorjahr.anwesende_ids)
+        neu.tische = vorjahr.tische
+        neu.letzte_phase_modus = vorjahr.letzte_phase_modus
     bestand.spiele.append(neu)
     bestand.spiele.sort(key=lambda s: s.jahr)
     return neu
