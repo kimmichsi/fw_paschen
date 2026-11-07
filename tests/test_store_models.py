@@ -4,7 +4,7 @@ import pytest
 
 from paschen import spiel as sp
 from paschen import store
-from paschen.models import Datenbestand, Person
+from paschen.models import VERSION, Datenbestand, Person
 
 from conftest import person_id, preis_id
 
@@ -32,7 +32,7 @@ def test_hilfen(bestand):
 
 def test_laden_ohne_datei_ist_leer(tmp_path):
     b = store.laden(tmp_path)
-    assert b.personen == [] and b.spiele == [] and b.version == 3
+    assert b.personen == [] and b.spiele == [] and b.version == VERSION
 
 
 def test_speichern_laden_und_utf8(tmp_path):

@@ -19,7 +19,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Optional
 
-VERSION = 3
+VERSION = 4
 
 LETZTE_PHASE_MODI = ("tisch", "frei")
 MAX_TISCHE = 12
@@ -30,6 +30,10 @@ STANDARD_INTERVALL_S = 12
 def name_norm(name) -> str:
     """Normalisierter Preisname (Schluessel fuer Bilder/Zusammenlegen): strip, lower, Mehrfach-Leerzeichen zu einem."""
     return " ".join(str(name or "").split()).lower()
+
+
+# Folie zur Tisch-Regel (vom Nutzer gewuenscht, Wortlaut nach seiner Regel); wird Daten < v4 einmalig angehaengt
+TISCH_FOLIE = ("Mehrere Tische", "Wird an mehreren Tischen gespielt, hat jeder Tisch in jeder Phase gleich viele Runden.\nPreise, die sich nicht gleichmäßig aufteilen lassen, kommen in die letzte Phase.", None)
 
 
 def standard_regeln() -> list:
@@ -44,6 +48,7 @@ def standard_regeln() -> list:
         ("Gleichstand? Dann wird gestochen", "Nur die Spieler mit dem gleichen besten Ergebnis stechen. Wer die Gewinnerzahl zuerst erreicht hat, beginnt und gibt eine neue Vorgabe vor.\nGestochen wird, bis es einen eindeutigen Gewinner gibt.", None),
         ("Wer fängt an?", "Die erste Runde beginnt der jüngste Spieler.\nDanach beginnt jeweils der Spieler rechts vom bisherigen Startspieler.", None),
         ("Der Gewinner wählt", "Nach jeder Runde sucht sich der Gewinner einen der noch verfügbaren Preise aus – hier auf dem Beamer zu sehen.", None),
+        TISCH_FOLIE,
     ]
     return [{"id": neue_id(), "titel": ti, "text": tx, "wuerfel": list(w) if w else None} for ti, tx, w in folien]
 
@@ -297,8 +302,12 @@ class Datenbestand:
 
     @classmethod
     def from_dict(cls, d: dict) -> "Datenbestand":
-        """Laedt auch aeltere Staende (v1, v2: Tische, Tisch/Phase der Siege): Sieg-IDs, Standard-Regeln und leere Bildzuordnung werden ergaenzt."""
+        """Laedt auch aeltere Staende (v1, v2: Tische, Tisch/Phase der Siege; v3: Tisch-Folie): Sieg-IDs, Standard-Regeln und leere Bildzuordnung werden ergaenzt."""
         regeln = d["regeln"] if isinstance(d.get("regeln"), list) else standard_regeln()
+        if (isinstance(d.get("regeln"), list) and int(d.get("version") or 1) < 4
+                and not any(r.get("titel") == TISCH_FOLIE[0] for r in regeln)):
+            # v4: Tisch-Folie einmalig anhaengen (spaeter geloescht = bleibt geloescht)
+            regeln = list(regeln) + [{"titel": TISCH_FOLIE[0], "text": TISCH_FOLIE[1], "wuerfel": None}]
         return cls(
             version=VERSION,
             personen=[Person.from_dict(x) for x in d.get("personen", [])],

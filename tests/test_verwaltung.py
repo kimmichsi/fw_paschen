@@ -7,7 +7,7 @@ import pytest
 
 from paschen import demo, store
 from paschen.api import Api
-from paschen.models import Datenbestand, Sieg, name_norm, standard_regeln
+from paschen.models import VERSION, Datenbestand, Sieg, name_norm, standard_regeln
 
 JPG = "data:image/jpeg;base64," + base64.b64encode(b"\xff\xd8\xff\xe0fakejpeg").decode()
 PNG = "data:image/png;base64," + base64.b64encode(b"\x89PNGfakepng").decode()
@@ -62,7 +62,7 @@ def test_migration_v1_nach_v2(tmp_path):
     ordner.mkdir()
     (ordner / store.DATEINAME).write_text(json.dumps(alt), encoding="utf-8")
     b = store.laden(ordner)
-    assert b.version == 3
+    assert b.version == VERSION
     ids = [s.id for s in b.spiele[0].siege]
     assert all(ids) and len(set(ids)) == 2
     assert [r["titel"] for r in b.regeln] == [r["titel"] for r in standard_regeln()]

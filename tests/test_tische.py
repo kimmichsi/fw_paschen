@@ -6,7 +6,7 @@ import pytest
 from paschen import spiel as sp
 from paschen import store, verwaltung
 from paschen.api import Api
-from paschen.models import Datenbestand, Person, Spiel
+from paschen.models import VERSION, Datenbestand, Person, Spiel
 from paschen.spiel import RegelFehler
 
 
@@ -260,13 +260,13 @@ def test_migration_v2_nach_v3(tmp_path):
     (ordner / store.DATEINAME).write_text(json.dumps(alt), encoding="utf-8")
     b = store.laden(ordner)
     s = b.spiele[0]
-    assert b.version == 3 and s.tische == 1 and s.letzte_phase_modus == "tisch"
+    assert b.version == VERSION and s.tische == 1 and s.letzte_phase_modus == "tisch"
     assert s.siege[0].tisch is None and s.siege[0].phase_id is None
     store.speichern(ordner, b)
     b2 = store.laden(ordner)
     assert b2.spiele[0].tische == 1 and b2.to_dict() == b.to_dict()
     d = json.loads((ordner / store.DATEINAME).read_text(encoding="utf-8"))
-    assert d["version"] == 3 and d["spiele"][0]["tische"] == 1 and "tisch" in d["spiele"][0]["siege"][0]
+    assert d["version"] == VERSION and d["spiele"][0]["tische"] == 1 and "tisch" in d["spiele"][0]["siege"][0]
 
 
 def test_roundtrip_tische_und_ungueltige_werte():
@@ -461,3 +461,18 @@ def test_ein_tisch_ignoriert_umgebuchte_siege_frueherer_phase():
     sp.preis_nachlegen(s, _pid(s, "Honig"), 1)
     assert sp.uebertrag_gesamt(s) == 0 and sp.uebertragene_preise(s) == []
     assert sp.kontingent(s, p1) is None and sp.kontingent(s, p2) is None
+
+
+def test_migration_v3_haengt_tisch_folie_einmal_an():
+    from paschen.models import Datenbestand, TISCH_FOLIE
+    alt = {"version": 3, "personen": [], "spiele": [],
+           "regeln": [{"id": "r1", "titel": "Eigene Folie", "text": "x", "wuerfel": None}]}
+    b = Datenbestand.from_dict(alt)
+    assert [r["titel"] for r in b.regeln] == ["Eigene Folie", TISCH_FOLIE[0]]
+    # v4 gespeichert und geloescht: bleibt geloescht
+    d = b.to_dict()
+    d["regeln"] = d["regeln"][:1]
+    assert [r["titel"] for r in Datenbestand.from_dict(d).regeln] == ["Eigene Folie"]
+    # schon vorhanden: nicht doppelt
+    alt["regeln"].append({"titel": TISCH_FOLIE[0], "text": "y"})
+    assert [r["titel"] for r in Datenbestand.from_dict(alt).regeln].count(TISCH_FOLIE[0]) == 1

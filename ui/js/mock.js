@@ -30,6 +30,7 @@
     { id: "r7", titel: "Gleichstand? Dann wird gestochen", text: "Nur die Spieler mit dem gleichen besten Ergebnis stechen. Wer die Gewinnerzahl zuerst erreicht hat, beginnt und gibt eine neue Vorgabe vor.\nGestochen wird, bis es einen eindeutigen Gewinner gibt.", wuerfel: null },
     { id: "r8", titel: "Wer fängt an?", text: "Die erste Runde beginnt der jüngste Spieler.\nDanach beginnt jeweils der Spieler rechts vom bisherigen Startspieler.", wuerfel: null },
     { id: "r9", titel: "Der Gewinner wählt", text: "Nach jeder Runde sucht sich der Gewinner einen der noch verfügbaren Preise aus – hier auf dem Beamer zu sehen.", wuerfel: null },
+    { id: "r10", titel: "Mehrere Tische", text: "Wird an mehreren Tischen gespielt, hat jeder Tisch in jeder Phase gleich viele Runden.\nPreise, die sich nicht gleichmäßig aufteilen lassen, kommen in die letzte Phase.", wuerfel: null },
   ];
   { const m = /[?&]folie=(\d+)/.exec(location.search); if (m) D.regel_index = +m[1]; }
 
